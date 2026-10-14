@@ -263,7 +263,7 @@
   joy.addEventListener("pointerup", e => { if (state.joystickPointer === e.pointerId) resetJoystick(); });
   joy.addEventListener("pointercancel", resetJoystick);
 
-  // Các nút bấm
+  // Thao tác nút bấm
   function holdButton(id, onDown, onUp) {
     const el = $(id);
     if (!el) return;
@@ -289,11 +289,18 @@
     setTimeout(() => { state.input.tackle = false; }, 120);
   }, () => {});
 
+  // GỒNG LỰC SÚT & BÁO HIỆU CỰC ĐẠI
   function updateKickCharge() {
     const fill = $("kickChargeFill");
     if (fill) {
       const power = state.kickHeld ? Math.min(1, 0.15 + (performance.now() - state.kickStart) / 1400) : 0;
       fill.style.width = `${power * 100}%`;
+      // Nếu đạt cực đại, viền thanh phát sáng rực lửa
+      if (power >= 1) {
+        fill.style.boxShadow = "0 0 10px #ff4d62, 0 0 16px #ffca65";
+      } else {
+        fill.style.boxShadow = "none";
+      }
     }
     if (state.kickHeld) state.kickChargeFrame = requestAnimationFrame(updateKickCharge);
   }
@@ -308,12 +315,16 @@
     const power = Math.max(0.15, Math.min(1, 0.15 + heldMs / 1400));
     state.input.kickPower = power; state.kickHeld = false; state.input.kick = false;
     cancelAnimationFrame(state.kickChargeFrame);
-    const fill = $("kickChargeFill"); if (fill) fill.style.width = "0%";
+    const fill = $("kickChargeFill");
+    if (fill) {
+      fill.style.width = "0%";
+      fill.style.boxShadow = "none";
+    }
     send("input", { input: { ...state.input, facing: { ...state.facing }, x: state.facing.x, y: state.facing.y, kick: true, kickPower: power } });
     setTimeout(() => { state.input.kickPower = 0; }, 80);
   });
 
-  // Bàn phím
+  // Bàn phím máy tính
   window.addEventListener("keydown", e => {
     if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
     if (e.repeat) return;
@@ -334,7 +345,14 @@
         send("input", { input: { ...state.input, tackle: true, facing: { ...state.facing } } });
       }
     }
-    if (e.key === " ") { state.kickHeld = true; state.kickStart = performance.now(); }
+    if (e.key === " ") {
+      if (!state.kickHeld) {
+        state.kickHeld = true;
+        state.kickStart = performance.now();
+        cancelAnimationFrame(state.kickChargeFrame);
+        updateKickCharge();
+      }
+    }
   });
 
   window.addEventListener("keyup", e => {
@@ -346,9 +364,18 @@
     if (e.key === "Shift") state.input.sprint = false;
     if (e.key.toLowerCase() === "e") state.input.control = false;
     if (e.key === " " && state.kickHeld) {
-      state.input.kickPower = Math.max(0.15, Math.min(1, 0.15 + (performance.now() - state.kickStart) / 1400));
-      send("input", { input: { ...state.input, facing: { ...state.facing }, x: state.facing.x, y: state.facing.y, kick: true } });
-      state.kickHeld = false; state.input.kickPower = 0;
+      const heldMs = performance.now() - state.kickStart;
+      const power = Math.max(0.15, Math.min(1, 0.15 + heldMs / 1400));
+      state.input.kickPower = power;
+      state.kickHeld = false;
+      cancelAnimationFrame(state.kickChargeFrame);
+      const fill = $("kickChargeFill");
+      if (fill) {
+        fill.style.width = "0%";
+        fill.style.boxShadow = "none";
+      }
+      send("input", { input: { ...state.input, facing: { ...state.facing }, x: state.facing.x, y: state.facing.y, kick: true, kickPower: power } });
+      setTimeout(() => { state.input.kickPower = 0; }, 80);
     }
   });
 
@@ -419,7 +446,7 @@
     ctx.scale(zoom, zoom);
     ctx.translate(-camX, -camY);
 
-    // Nền ngoài sân
+    // Nền sân ngoài
     ctx.fillStyle = "#074837";
     ctx.fillRect(-1000, -1000, fw + 2000, fh + 2000);
 
@@ -440,7 +467,7 @@
     ctx.lineWidth = 4;
     ctx.strokeRect(m, m, fw - m * 2, fh - m * 2);
 
-    // Đường giữa sân và vòng tròn trung tâm
+    // Giữa sân
     ctx.beginPath();
     ctx.moveTo(fw / 2, m);
     ctx.lineTo(fw / 2, fh - m);
@@ -467,7 +494,7 @@
     ctx.fillRect(fw - m, fh / 2 - gh / 2, 35, gh);
     ctx.strokeRect(fw - m, fh / 2 - gh / 2, 35, gh);
 
-    // Cầu thủ & Bóng
+    // Cầu thủ
     if (s) {
       s.players.forEach(p => {
         const color = p.team === "red" ? "#ff4d62" : "#448cff";
@@ -520,21 +547,34 @@
         ctx.restore();
       });
 
+      // Quả bóng: Nếu bay với vận tốc cực đại (> 800) sẽ phát sáng rực lửa
       const b = s.ball;
+      const bSpeed = Math.hypot(b.vx, b.vy);
+      const isSuperShot = bSpeed > 800;
+
       ctx.save();
-      ctx.shadowColor = "#fff";
-      ctx.shadowBlur = 14;
-      ctx.fillStyle = "#f4f8ff";
+      if (isSuperShot) {
+        ctx.shadowColor = "#ffca65";
+        ctx.shadowBlur = 25;
+        ctx.fillStyle = "#fff4d4";
+      } else {
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = "#f4f8ff";
+      }
+
       ctx.beginPath();
       ctx.arc(b.x, b.y, 10, 0, Math.PI * 2);
       ctx.fill();
+
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = "#122433";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = isSuperShot ? "#ff4d62" : "#122433";
+      ctx.lineWidth = 2.5;
       ctx.stroke();
+
       ctx.beginPath();
       ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#122433";
+      ctx.fillStyle = isSuperShot ? "#ff4d62" : "#122433";
       ctx.fill();
       ctx.restore();
 

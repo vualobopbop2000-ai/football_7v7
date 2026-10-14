@@ -188,14 +188,12 @@ function resetAfterGoal(room) {
   spawnPlayers(room);
 }
 
-// Xử lý khi có bàn thắng: đếm ngược 3-2-1
 function handleGoal(room, goalTeam) {
   const state = room.state;
   if (!state || room.isGoalPausing) return;
 
   state.score[goalTeam]++;
 
-  // Tìm người ghi bàn nếu có
   let scorerName = "";
   if (state.ball.lastTouchId) {
     const p = room.players.get(state.ball.lastTouchId);
@@ -216,7 +214,6 @@ function handleGoal(room, goalTeam) {
 
   resetAfterGoal(room);
 
-  // Kích hoạt trạng thái dừng đếm ngược 3-2-1
   room.isGoalPausing = true;
   let count = 3;
 
@@ -247,7 +244,6 @@ function tick(room) {
   const now = Date.now();
   const state = room.state;
 
-  // Khi đang đếm ngược sau bàn thắng: dừng tính giờ trận đấu và đóng băng di chuyển
   if (room.isGoalPausing) {
     room.startedAt += (now - room.lastTick);
     room.lastTick = now;
@@ -299,6 +295,7 @@ function tick(room) {
     p.x = clamp(p.x + p.vx * DT, FIELD.margin + p.radius, FIELD.width - FIELD.margin - p.radius);
     p.y = clamp(p.y + p.vy * DT, FIELD.margin + p.radius, FIELD.height - FIELD.margin - p.radius);
 
+    // XỬ LÝ SÚT BÓNG (NẾU ĐẠT CỰC ĐẠI: VẬN TỐC TĂNG GẤP 1.5 LẦN)
     if (p.pendingKick && ball.ownerId === p.id) {
       const kick = p.pendingKick;
       p.pendingKick = null;
@@ -306,14 +303,19 @@ function tick(room) {
       const power = clamp(kick.power || 0.65, 0.15, 1);
       ball.ownerId = null;
       ball.lastTouchId = p.id;
-      ball.vx = Math.cos(angle) * (330 + power * 420);
-      ball.vy = Math.sin(angle) * (330 + power * 420);
+
+      // Khi ghì đè nút sút đạt cực đại (power >= 0.98), nhân thêm 1.5 lần
+      const isMaxPower = power >= 0.98;
+      const kickSpeed = (330 + power * 420) * (isMaxPower ? 1.5 : 1.0);
+
+      ball.vx = Math.cos(angle) * kickSpeed;
+      ball.vy = Math.sin(angle) * kickSpeed;
     } else if (p.pendingKick) {
       p.pendingKick = null;
     }
   }
 
-  // Va chạm giữa các cầu thủ
+  // Va chạm cầu thủ
   for (let i = 0; i < players.length; i++) for (let j = i + 1; j < players.length; j++) {
     const a = players[i], b = players[j];
     const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.001;
@@ -354,7 +356,6 @@ function tick(room) {
     ball.vx *= friction; ball.vy *= friction;
     if (Math.hypot(ball.vx, ball.vy) < 8) ball.vx = ball.vy = 0;
 
-    // Kiểm tra bàn thắng
     const inGoal = Math.abs(ball.y - FIELD.height / 2) < FIELD.goalHeight / 2;
     let goalTeam = null;
     if (ball.x <= FIELD.margin + ball.r && inGoal && ball.vx < 0) {
