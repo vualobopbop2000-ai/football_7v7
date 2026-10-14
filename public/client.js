@@ -4,7 +4,7 @@
   const state = {
     ws: null, connected: false, id: null, name: "", room: null, rooms: [],
     ready: false, isHost: false, field: { width: 1200, height: 700, goalHeight: 190, margin: 34 },
-    snapshot: null, countdown: null, kickHeld: false, kickStart: 0,
+    snapshot: null, countdown: null, kickHeld: false, kickStart: 0, kickChargeFrame: 0,
     input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false },
     facing: { x: 1, y: 0 }, tackleReadyAt: 0,
     joystickPointer: null, joystickOrigin: null, toastTimer: null
@@ -177,11 +177,28 @@
     send("input", { input: { ...state.input, tackle: true, facing: { ...state.facing } } });
     setTimeout(() => { state.input.tackle = false; }, 120);
   }, () => {});
-  holdButton("kickBtn", () => { state.kickHeld = true; state.kickStart = performance.now(); state.input.kick = true; }, () => {
-    state.input.kickPower = Math.min(1, .2 + (performance.now() - state.kickStart) / 900);
-    state.input.kick = false; state.kickHeld = false;
-    send("input", { input: { ...state.input, kick: true } });
-    setTimeout(() => { state.input.kickPower = 0; }, 50);
+  function updateKickCharge() {
+    const fill = $("kickChargeFill");
+    if (fill) {
+      const power = state.kickHeld ? Math.min(1, .15 + (performance.now() - state.kickStart) / 1400) : 0;
+      fill.style.width = `${power * 100}%`;
+      fill.parentElement?.setAttribute("aria-valuenow", String(Math.round(power * 100)));
+    }
+    if (state.kickHeld) state.kickChargeFrame = requestAnimationFrame(updateKickCharge);
+  }
+  holdButton("kickBtn", () => {
+    if (state.kickHeld) return;
+    state.kickHeld = true; state.kickStart = performance.now(); state.input.kick = false;
+    cancelAnimationFrame(state.kickChargeFrame); updateKickCharge();
+  }, () => {
+    if (!state.kickHeld) return;
+    const heldMs = performance.now() - state.kickStart;
+    const power = Math.max(.15, Math.min(1, .15 + heldMs / 1400));
+    state.input.kickPower = power; state.kickHeld = false; state.input.kick = false;
+    cancelAnimationFrame(state.kickChargeFrame);
+    const fill = $("kickChargeFill"); if (fill) fill.style.width = "0%";
+    send("input", { input: { ...state.input, facing: { ...state.facing }, x: state.facing.x, y: state.facing.y, kick: true, kickPower: power } });
+    setTimeout(() => { state.input.kickPower = 0; }, 80);
   });
   window.addEventListener("keydown", e => {
     if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
@@ -204,8 +221,8 @@
     if (e.key === "Shift") state.input.sprint = false;
     if (e.key.toLowerCase() === "e") state.input.control = false;
     if (e.key === " " && state.kickHeld) {
-      state.input.kickPower = Math.min(1, .2 + (performance.now() - state.kickStart) / 900);
-      send("input", { input: { ...state.input, kick: true } });
+      state.input.kickPower = Math.max(.15, Math.min(1, .15 + (performance.now() - state.kickStart) / 1400));
+      send("input", { input: { ...state.input, facing: { ...state.facing }, x: state.facing.x, y: state.facing.y, kick: true } });
       state.kickHeld = false; state.input.kickPower = 0;
     }
   });

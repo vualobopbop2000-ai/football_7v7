@@ -75,11 +75,13 @@ function joinRoom(client, room, isHost = false) {
   if (room.status !== "waiting") return send(client.ws, { type: "error", message: "Phòng đã bắt đầu hoặc đã kết thúc." });
   if (room.players.size >= 14) return send(client.ws, { type: "error", message: "Phòng đã đủ 14 người." });
   if (client.roomId) leaveRoom(client, false);
+  const team = assignTeam(room);
+  const initialFacing = { x: team === "red" ? 1 : -1, y: 0 };
   const player = {
-    id: client.id, name: client.name, team: assignTeam(room), ready: false, isHost,
+    id: client.id, name: client.name, team, ready: false, isHost,
     ws: client.ws, x: 0, y: 0, vx: 0, vy: 0, stamina: 100,
-    input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false, facing: { x: team === "red" ? 1 : -1, y: 0 } },
-    facing: { x: team === "red" ? 1 : -1, y: 0 }, pendingKick: null,
+    input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false, facing: initialFacing },
+    facing: initialFacing, pendingKick: null,
     tackleUntil: 0, tackleCooldownUntil: 0, radius: 17, stunnedUntil: 0, goals: 0, saves: 0
   };
   room.players.set(player.id, player);
@@ -221,7 +223,7 @@ function tick(room) {
     if (p.pendingKick && ball.ownerId === p.id) {
       const kick = p.pendingKick;
       p.pendingKick = null;
-      const angle = Math.atan2(kick.y || 0, kick.x || (p.team === "red" ? 1 : -1));
+      const angle = Math.atan2(kick.y, kick.x);
       const power = clamp(kick.power || 0.65, 0.15, 1);
       ball.ownerId = null;
       ball.vx = Math.cos(angle) * (330 + power * 420);
@@ -369,10 +371,14 @@ wss.on("connection", ws => {
         p.tackleCooldownUntil = Date.now() + 2000;
       }
       p._tackleInputHeld = p.input.tackle;
-      if (i.kick) p.pendingKick = {
-        x: clamp(Number(i.x) || 0, -1, 1), y: clamp(Number(i.y) || 0, -1, 1),
-        power: clamp(Number(i.kickPower) || 0.65, 0.15, 1)
-      };
+      if (i.kick) {
+        const shotFacing = p.input.facing || p.facing || { x: p.team === "red" ? 1 : -1, y: 0 };
+        const shotMagnitude = Math.hypot(shotFacing.x, shotFacing.y) || 1;
+        p.pendingKick = {
+          x: shotFacing.x / shotMagnitude, y: shotFacing.y / shotMagnitude,
+          power: clamp(Number(i.kickPower) || 0.2, 0.15, 1)
+        };
+      }
     }
     if (msg.type === "playAgain") {
       const room = rooms.get(client.roomId);
@@ -389,4 +395,4 @@ wss.on("connection", ws => {
   });
 });
 
-server.listen(PORT, () => console.log(`Football 2D running at http://localhost:${PORT}`));
+server.listen(PORT, "0.0.0.0", () => console.log(`Football 2D listening on port ${PORT}`));

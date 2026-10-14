@@ -33,3 +33,9 @@
   .control-btn{width:clamp(52px,13vw,66px);height:58px;background:rgba(16,37,56,.78);backdrop-filter:blur(6px);border-color:rgba(130,170,195,.35);gap:5px}
   .control-btn small{font-size:6px;white-space:nowrap}
 }
+
+/* Shot charging indicator */
+#kickBtn{position:relative;overflow:hidden;padding-bottom:8px}
+.kick-charge-track{position:absolute;left:7px;right:7px;bottom:5px;height:4px;border-radius:4px;background:rgba(220,240,250,.2);overflow:hidden}
+#kickChargeFill{display:block;width:0%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#39e6d0,#ffca65,#ff4d62);box-shadow:0 0 8px #39e6d088;transition:width .04s linear}
+#kickBtn.pressed .kick-charge-track{height:6px;background:rgba(255,255,255,.3)}
