@@ -44,7 +44,7 @@
           <div class="ready-info"><span id="readyCount" class="ready-number">0/0</span><div><strong>TRẠNG THÁI SẴN SÀNG</strong><p class="muted">Mọi người trong phòng phải sẵn sàng.</p></div></div>
           <div class="lobby-actions"><button id="readyBtn" class="btn btn-secondary">✓ SẴN SÀNG</button><button id="startBtn" class="btn btn-primary" disabled>BẮT ĐẦU TRẬN</button></div>
         </div>
-        <p class="hint">Đội được tự động cân bằng và luân phiên. Không cần đủ 14 người — chỉ cần mỗi đội có số người bằng nhau.</p>
+        <div class="hint"><p>• Giữ nút tăng tốc để chạy</p><p>• Giữ nút sút để tăng lực sút hoặc chuyền</p><p>• Giữ nút đỡ bóng để đỡ bóng hoặc bắt bóng</p></div>
       </section>
 
       <section id="gameScreen" class="screen hidden">
@@ -52,7 +52,7 @@
         <div class="field-wrap"><canvas id="gameCanvas" width="1280" height="720" aria-label="Sân bóng 2D"></canvas><canvas id="minimapCanvas" width="180" height="105" aria-label="Bản đồ nhỏ"></canvas><div id="countdownOverlay" class="countdown-overlay hidden"><span id="countdownNumber">3</span><small>TRẬN ĐẤU BẮT ĐẦU</small></div></div>
         <div class="game-controls">
           <div class="joystick-area"><div id="joystick" class="joystick"><div id="joystickKnob" class="joystick-knob"></div></div><span>DI CHUYỂN</span></div>
-          <div class="control-buttons"><button id="sprintBtn" class="control-btn sprint-btn">⚡<small>TĂNG TỐC</small></button><button id="controlBtn" class="control-btn">◉<small>ĐỠ BÓNG</small></button><button id="kickBtn" class="control-btn kick-btn" aria-label="Giữ để gồng lực sút hoặc chuyền">➤<small>SÚT / CHUYỀN</small><span class="kick-charge-track" role="progressbar" aria-label="Lực sút" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="kickChargeFill"></span></span></button><button id="tackleBtn" class="control-btn tackle-btn">↘<small>XOẠC BÓNG</small></button></div>
+          <div class="control-buttons"><button id="sprintBtn" class="control-btn sprint-btn">⚡<small>TĂNG TỐC</small></button><button id="controlBtn" class="control-btn">◉<small>ĐỠ BÓNG</small></button><button id="kickBtn" class="control-btn kick-btn" aria-label="Giữ để gồng lực sút hoặc chuyền">➤<small>SÚT</small><span class="kick-charge-track" role="progressbar" aria-label="Lực sút" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="kickChargeFill"></span></span></button><button id="tackleBtn" class="control-btn tackle-btn">↘<small>XOẠC BÓNG</small></button></div>
         </div>
       </section>
 

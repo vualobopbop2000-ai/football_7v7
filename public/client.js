@@ -7,7 +7,7 @@
     snapshot: null, countdown: null, kickHeld: false, kickStart: 0, kickChargeFrame: 0,
     input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false },
     facing: { x: 1, y: 0 }, tackleReadyAt: 0,
-    joystickPointer: null, joystickOrigin: null, toastTimer: null
+    joystickPointer: null, joystickOrigin: null, toastTimer: null, reconnectTimer: null, reconnectDelay: 1000, pendingMessages: []
   };
   function showScreen(id) { screens.forEach(s => $(s).classList.toggle("hidden", s !== id)); }
   function toast(message) {
@@ -15,25 +15,61 @@
     clearTimeout(state.toastTimer); state.toastTimer = setTimeout(() => el.classList.add("hidden"), 3200);
   }
   function send(type, extra = {}) {
-    if (state.ws?.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify({ type, ...extra }));
-    else toast("Chưa kết nối được máy chủ.");
+    const payload = JSON.stringify({ type, ...extra });
+    if (state.ws?.readyState === WebSocket.OPEN) {
+      state.ws.send(payload);
+      return true;
+    }
+    // Keep lobby actions made during a brief reconnect; flush them after the socket opens.
+    if (type !== "input" && type !== "ready" && type !== "start" && type !== "leaveRoom" && type !== "playAgain") {
+      state.pendingMessages.push(payload);
+      if (state.pendingMessages.length > 20) state.pendingMessages.shift();
+    }
+    const status = state.ws?.readyState === WebSocket.CONNECTING ? "Đang kết nối máy chủ, vui lòng đợi một chút…" : "Chưa kết nối được máy chủ. Đang thử kết nối lại…";
+    toast(status);
+    return false;
   }
   function connect() {
+    if (state.ws && [WebSocket.CONNECTING, WebSocket.OPEN].includes(state.ws.readyState)) return;
     const scheme = location.protocol === "https:" ? "wss:" : "ws:";
-    state.ws = new WebSocket(`${scheme}//${location.host}`);
-    state.ws.addEventListener("open", () => {
-      state.connected = true; $("connectionDot").classList.add("online"); $("connectionText").textContent = "ĐÃ KẾT NỐI";
-      send("setName", { name: $("playerName").value.trim() });
+    const socketUrl = `${scheme}//${location.host}`;
+    state.connected = false;
+    $("connectionDot").classList.remove("online");
+    $("connectionText").textContent = "ĐANG KẾT NỐI…";
+    let ws;
+    try { ws = new WebSocket(socketUrl); state.ws = ws; }
+    catch (err) {
+      $("connectionText").textContent = "KHÔNG KẾT NỐI ĐƯỢC";
+      scheduleReconnect(); return;
+    }
+    ws.addEventListener("open", () => {
+      if (state.ws !== ws) return;
+      state.connected = true; state.reconnectDelay = 1000;
+      $("connectionDot").classList.add("online"); $("connectionText").textContent = "ĐÃ KẾT NỐI";
+      ws.send(JSON.stringify({ type: "setName", name: $("playerName").value.trim() }));
+      const queued = state.pendingMessages.splice(0);
+      queued.forEach(payload => { if (ws.readyState === WebSocket.OPEN) ws.send(payload); });
     });
-    state.ws.addEventListener("close", () => {
-      state.connected = false; $("connectionDot").classList.remove("online"); $("connectionText").textContent = "MẤT KẾT NỐI";
-      toast("Mất kết nối máy chủ. Tải lại trang để kết nối lại.");
+    ws.addEventListener("close", () => {
+      if (state.ws !== ws) return;
+      state.connected = false; $("connectionDot").classList.remove("online");
+      $("connectionText").textContent = "MẤT KẾT NỐI — ĐANG THỬ LẠI";
+      scheduleReconnect();
     });
-    state.ws.addEventListener("error", () => { $("connectionText").textContent = "LỖI KẾT NỐI"; });
-    state.ws.addEventListener("message", ev => {
+    ws.addEventListener("error", () => {
+      if (state.ws === ws) $("connectionText").textContent = "LỖI WEBSOCKET";
+      // Browsers hide the detailed handshake error; close triggers reconnect.
+    });
+    ws.addEventListener("message", ev => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
       handleMessage(msg);
     });
+  }
+  function scheduleReconnect() {
+    if (state.reconnectTimer) return;
+    const delay = state.reconnectDelay;
+    state.reconnectDelay = Math.min(15000, Math.round(state.reconnectDelay * 1.8));
+    state.reconnectTimer = setTimeout(() => { state.reconnectTimer = null; connect(); }, delay);
   }
   function handleMessage(msg) {
     switch (msg.type) {

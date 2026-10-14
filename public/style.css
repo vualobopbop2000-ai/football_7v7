@@ -39,3 +39,52 @@
 .kick-charge-track{position:absolute;left:7px;right:7px;bottom:5px;height:4px;border-radius:4px;background:rgba(220,240,250,.2);overflow:hidden}
 #kickChargeFill{display:block;width:0%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#39e6d0,#ffca65,#ff4d62);box-shadow:0 0 8px #39e6d088;transition:width .04s linear}
 #kickBtn.pressed .kick-charge-track{height:6px;background:rgba(255,255,255,.3)}
+
+
+/* Mobile match: rotate the playfield into landscape to use the whole phone display. */
+@media (max-width: 700px) and (orientation: portrait) {
+  body:has(#gameScreen:not(.hidden)) { overflow:hidden; width:100%; height:100dvh; }
+  body:has(#gameScreen:not(.hidden)) .app-shell { width:100%; height:100dvh; min-height:0; padding:0; margin:0; }
+  body:has(#gameScreen:not(.hidden)) main { padding:0; margin:0; width:100%; height:100%; }
+  #gameScreen {
+    position:fixed; top:0; left:0; width:100dvh; height:100vw; min-height:0;
+    transform-origin:top left; transform:translateX(100vw) rotate(90deg);
+    overflow:hidden; background:#07111c; z-index:100; animation:none;
+  }
+  #gameScreen .game-header { position:absolute; inset:0 0 auto 0; height:54px; padding:8px 12px; margin:0; z-index:8; display:flex; align-items:flex-start; justify-content:center; pointer-events:none; }
+  #gameScreen .game-header>div:first-child { display:none; }
+  #gameScreen .scoreboard { display:flex; width:max-content; max-width:80%; margin:0 auto; padding:5px 12px; gap:10px; border-radius:10px; background:rgba(8,24,37,.78); backdrop-filter:blur(8px); pointer-events:auto; }
+  #gameScreen .score-team { gap:5px; font-size:9px; }
+  #gameScreen .score-team b { font-size:22px; }
+  #gameScreen .match-clock { font-size:18px; padding:0 9px; }
+  #gameScreen .field-wrap { position:absolute; inset:0; width:100%; height:100%; margin:0; border:0; border-radius:0; box-shadow:none; overflow:hidden; }
+  #gameScreen #gameCanvas { display:block; width:100%; height:100%; max-height:none; aspect-ratio:auto; }
+  #gameScreen #minimapCanvas { position:absolute; top:58px; right:12px; width:clamp(88px,15vw,145px); height:auto; opacity:.76; border-radius:8px; }
+  #gameScreen .game-controls { position:absolute; inset:0; z-index:10; display:block; padding:0; margin:0; pointer-events:none; }
+  #gameScreen .joystick-area { position:absolute; left:max(16px, env(safe-area-inset-left)); bottom:max(14px, env(safe-area-inset-bottom)); display:block; pointer-events:none; }
+  #gameScreen .joystick-area>span { display:none; }
+  #gameScreen .joystick { width:clamp(76px,13vw,100px); height:clamp(76px,13vw,100px); border-radius:50%; background:rgba(190,210,220,.20); border-color:rgba(220,240,250,.38); backdrop-filter:blur(6px); pointer-events:auto; box-shadow:inset 0 0 22px #0002; }
+  #gameScreen .joystick:after { border-color:rgba(230,245,255,.3); }
+  #gameScreen .joystick-knob { width:42%; height:42%; left:29%; top:29%; border-radius:50%; background:rgba(57,230,208,.8); }
+  #gameScreen .control-buttons { position:absolute; right:max(14px, env(safe-area-inset-right)); bottom:max(14px, env(safe-area-inset-bottom)); display:flex; flex-flow:row nowrap; align-items:flex-end; justify-content:flex-end; gap:clamp(5px,1.2vw,12px); width:auto; pointer-events:auto; }
+  #gameScreen .control-btn { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:clamp(58px,9vw,76px); height:clamp(58px,9vw,76px); padding:0; border-radius:50%; border:1px solid rgba(180,210,230,.5); background:rgba(16,37,56,.78); backdrop-filter:blur(7px); font-size:20px; line-height:1; }
+  #gameScreen .control-btn small { display:block; font-size:clamp(6px,.9vw,8px); white-space:nowrap; letter-spacing:0; }
+  #gameScreen #sprintBtn { width:clamp(82px,13vw,108px); height:clamp(82px,13vw,108px); font-size:clamp(28px,4vw,40px); border-color:rgba(255,202,101,.7); background:rgba(40,39,35,.78); box-shadow:0 0 18px rgba(255,202,101,.12), inset 0 0 12px rgba(255,202,101,.08); }
+  #gameScreen #sprintBtn small { font-size:clamp(7px,1vw,9px); }
+  #gameScreen #controlBtn { color:#eaf4ff; }
+  #gameScreen #kickBtn { color:var(--cyan); }
+  #gameScreen #tackleBtn { color:#ff9aaf; }
+  #gameScreen .kick-charge-track { left:20%; right:20%; bottom:15%; height:3px; }
+  #gameScreen .countdown-overlay { z-index:7; }
+}
+@media (max-height:420px) and (orientation:landscape) and (max-width:950px) {
+  #gameScreen { min-height:100dvh; }
+  #gameScreen .game-header { margin:0; }
+  #gameScreen .field-wrap { position:absolute; inset:0; width:100%; height:100%; }
+  #gameScreen #gameCanvas { width:100%; height:100%; aspect-ratio:auto; }
+  #gameScreen .game-controls { position:fixed; inset:0; z-index:10; pointer-events:none; }
+  #gameScreen .joystick-area { position:fixed; left:12px; bottom:10px; }
+  #gameScreen .control-buttons { position:fixed; right:12px; bottom:10px; width:auto; flex-wrap:nowrap; }
+}
+.hint { margin:10px 0 0; }
+.hint p { margin:3px 0; }
