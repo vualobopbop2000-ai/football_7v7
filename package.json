@@ -1,0 +1,16 @@
+{
+  "name": "football2d-authoritative",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Authoritative multiplayer 2D football game starter",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}
