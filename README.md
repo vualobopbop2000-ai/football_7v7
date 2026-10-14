@@ -33,3 +33,9 @@ Rooms are stored in memory and reset when the process restarts. Supabase/SQL is 
 - Added a dedicated native landscape layout for phones held horizontally.
 
 For Render, replace the matching project files and deploy the latest commit. Test both portrait fallback and actual landscape orientation on the target phone.
+
+
+## V6 mobile layout hotfix
+- Keeps `.hidden` screens hidden so the initial create/join room menu is visible.
+- Forces the active match canvas to fill the rotated landscape viewport.
+- Places minimap at top-right and control overlays above the pitch.
