@@ -25,3 +25,11 @@ This game requires a **Render Web Service**, not a Static Site, because the Node
 - Persistent facing, charged shot/pass, reduced ball bounce while controlling, sprint stamina, tackle with server-side 2-second cooldown.
 
 Rooms are stored in memory and reset when the process restarts. Supabase/SQL is not required for this build.
+
+
+## Mobile layout update (v5)
+- Reworked the portrait fallback so the match scene uses the full rotated viewport rather than a half-width canvas.
+- Repositioned the minimap, joystick, scoreboard, and round action buttons for the rotated landscape coordinate system.
+- Added a dedicated native landscape layout for phones held horizontally.
+
+For Render, replace the matching project files and deploy the latest commit. Test both portrait fallback and actual landscape orientation on the target phone.
