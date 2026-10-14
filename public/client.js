@@ -414,17 +414,13 @@
     const fw = state.field.width || 2400, fh = state.field.height || 1400;
     const me = s && s.players ? s.players.find(p => p.id === state.id) : null;
 
-    // CAMERA: Cầu thủ người chơi là tâm điểm
+    // CAMERA: Cầu thủ người chơi LUÔN nằm ngay chính giữa màn hình (vw/2, vh/2)
     const camX = me ? me.x : fw / 2;
     const camY = me ? me.y : fh / 2;
     const zoom = Math.min(vw / 1100, vh / 680);
 
     ctx.save();
-    // Dịch sân bóng lên trên khoảng 0.70cm (~28 CSS pixels)
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const shiftUpPx = 28 * dpr;
-
-    ctx.translate(vw / 2, (vh / 2) - shiftUpPx);
+    ctx.translate(vw / 2, vh / 2);
     ctx.scale(zoom, zoom);
     ctx.translate(-camX, -camY);
 
@@ -474,7 +470,7 @@
     ctx.fillRect(m - 35, fh / 2 - gh / 2, 35, gh);
     ctx.strokeRect(m - 35, fh / 2 - gh / 2, 35, gh);
     ctx.fillRect(fw - m, fh / 2 - gh / 2, 35, gh);
-    ctx.strokeRect(fw - m, fh / 2 - gh / 2, 40, gh);
+    ctx.strokeRect(fw - m, fh / 2 - gh / 2, 35, gh);
 
     // Vẽ Cầu thủ và Bóng
     if (s) {
@@ -560,3 +556,7 @@
     ctx.restore();
     requestAnimationFrame(draw);
   }
+
+  requestAnimationFrame(draw);
+  connect();
+})();
