@@ -2,14 +2,15 @@ const express = require("express");
 const http = require("http");
 const { WebSocketServer, WebSocket } = require("ws");
 const crypto = require("crypto");
+const path = require("path");
 
 const PORT = Number(process.env.PORT || 3000);
 const TICK_RATE = 60;
 const DT = 1 / TICK_RATE;
-const FIELD = { width: 1200, height: 700, goalHeight: 190, margin: 34 };
+const FIELD = { width: 2400, height: 1400, goalHeight: 190, margin: 50 };
 const MATCH_SECONDS = 5 * 60;
 const app = express();
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", (_req, res) => res.json({ ok: true, rooms: rooms.size }));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -77,9 +78,9 @@ function joinRoom(client, room, isHost = false) {
   const player = {
     id: client.id, name: client.name, team: assignTeam(room), ready: false, isHost,
     ws: client.ws, x: 0, y: 0, vx: 0, vy: 0, stamina: 100,
-    input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false },
-    pendingKick: null,
-    radius: 17, stunnedUntil: 0, goals: 0, saves: 0
+    input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false, facing: { x: team === "red" ? 1 : -1, y: 0 } },
+    facing: { x: team === "red" ? 1 : -1, y: 0 }, pendingKick: null,
+    tackleUntil: 0, tackleCooldownUntil: 0, radius: 17, stunnedUntil: 0, goals: 0, saves: 0
   };
   room.players.set(player.id, player);
   client.roomId = room.id;
@@ -156,7 +157,7 @@ function spawnPlayers(room) {
       const rows = Math.ceil(Math.sqrt(list.length));
       p.x = xBase + (i % rows - (rows - 1) / 2) * 55;
       p.y = FIELD.height / 2 + (Math.floor(i / rows) - (rows - 1) / 2) * 55;
-      p.vx = p.vy = 0; p.stamina = 100;
+      p.vx = p.vy = 0; p.stamina = 100; p.tackleUntil = 0; p.tackleCooldownUntil = 0; p.facing = { x: team === "red" ? 1 : -1, y: 0 };
     });
   }
 }
@@ -192,16 +193,28 @@ function tick(room) {
     let ix = input.x, iy = input.y;
     const mag = Math.hypot(ix, iy);
     if (mag > 1) { ix /= mag; iy /= mag; }
+    // Face direction follows the last meaningful movement input and persists when the stick is released.
+    const suppliedFacing = input.facing || {};
+    const fm = Math.hypot(Number(suppliedFacing.x) || 0, Number(suppliedFacing.y) || 0);
+    if (mag > 0.18) p.facing = { x: ix / (mag || 1), y: iy / (mag || 1) };
+    else if (fm > 0.1) p.facing = { x: Number(suppliedFacing.x) / fm, y: Number(suppliedFacing.y) / fm };
     const stunned = now < p.stunnedUntil;
     let speed = 185;
+    // 1.2x stamina drain; empty stamina always means normal movement speed.
     if (input.sprint && p.stamina > 0 && !stunned) {
       speed *= 1.7;
-      p.stamina = Math.max(0, p.stamina - 34 * DT);
+      p.stamina = Math.max(0, p.stamina - 40.8 * DT);
     } else {
       p.stamina = Math.min(100, p.stamina + 18 * DT);
     }
     if (stunned) ix = iy = 0;
-    p.vx = ix * speed; p.vy = iy * speed;
+    // A tackle is a short directional lunge. Cooldown is enforced by the server.
+    if (now < p.tackleUntil && !stunned) {
+      p.vx = p.facing.x * 430;
+      p.vy = p.facing.y * 430;
+    } else {
+      p.vx = ix * speed; p.vy = iy * speed;
+    }
     p.x = clamp(p.x + p.vx * DT, FIELD.margin + p.radius, FIELD.width - FIELD.margin - p.radius);
     p.y = clamp(p.y + p.vy * DT, FIELD.margin + p.radius, FIELD.height - FIELD.margin - p.radius);
 
@@ -230,11 +243,24 @@ function tick(room) {
     }
   }
 
+  // Tackle wins possession only by making contact with the ball itself.
+  for (const p of players) {
+    if (now >= p.tackleUntil) continue;
+    const dx = ball.x - p.x, dy = ball.y - p.y;
+    const dist = Math.hypot(dx, dy) || 0.001;
+    const dot = (dx / dist) * p.facing.x + (dy / dist) * p.facing.y;
+    if (dist <= p.radius + ball.r + 25 && dot > 0.15) {
+      ball.ownerId = p.id;
+      ball.vx = ball.vy = 0;
+      p.tackleUntil = 0;
+      break;
+    }
+  }
+
   if (ball.ownerId) {
     const owner = room.players.get(ball.ownerId);
     if (owner) {
-      const speed = Math.hypot(owner.vx, owner.vy);
-      const dir = speed > 5 ? Math.atan2(owner.vy, owner.vx) : (owner.team === "red" ? 0 : Math.PI);
+      const dir = Math.atan2(owner.facing.y, owner.facing.x);
       ball.x = owner.x + Math.cos(dir) * (owner.radius + ball.r + 3);
       ball.y = owner.y + Math.sin(dir) * (owner.radius + ball.r + 3);
       ball.vx = owner.vx * 0.45; ball.vy = owner.vy * 0.45;
@@ -284,7 +310,7 @@ function tick(room) {
   const snapshot = {
     type: "snapshot", time: now, remaining: state.remaining, score: state.score,
     ball: { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy, ownerId: ball.ownerId },
-    players: players.map(p => ({ id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, stamina: p.stamina, ready: p.ready }))
+    players: players.map(p => ({ id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, stamina: p.stamina, ready: p.ready, facing: p.facing, tackling: now < p.tackleUntil, tackleCooldown: Math.max(0, p.tackleCooldownUntil - now) }))
   };
   for (const p of players) send(p.ws, snapshot);
 }
@@ -334,8 +360,15 @@ wss.on("connection", ws => {
       p.input = {
         x: clamp(Number(i.x) || 0, -1, 1), y: clamp(Number(i.y) || 0, -1, 1),
         sprint: Boolean(i.sprint), kick: false,
-        kickPower: clamp(Number(i.kickPower) || 0, 0, 1), control: Boolean(i.control)
+        kickPower: clamp(Number(i.kickPower) || 0, 0, 1), control: Boolean(i.control),
+        tackle: Boolean(i.tackle),
+        facing: (() => { const f = i.facing || p.facing; const m = Math.hypot(Number(f.x) || 0, Number(f.y) || 0); return m > 0.1 ? { x: Number(f.x)/m, y: Number(f.y)/m } : p.facing; })()
       };
+      if (p.input.tackle && !p._tackleInputHeld && Date.now() >= p.tackleCooldownUntil) {
+        p.tackleUntil = Date.now() + 260;
+        p.tackleCooldownUntil = Date.now() + 2000;
+      }
+      p._tackleInputHeld = p.input.tackle;
       if (i.kick) p.pendingKick = {
         x: clamp(Number(i.x) || 0, -1, 1), y: clamp(Number(i.y) || 0, -1, 1),
         power: clamp(Number(i.kickPower) || 0.65, 0.15, 1)
@@ -345,7 +378,7 @@ wss.on("connection", ws => {
       const room = rooms.get(client.roomId);
       if (!room || room.status !== "finished") return;
       room.status = "waiting"; room.state = null;
-      for (const p of room.players.values()) { p.ready = false; p.input = { x:0,y:0,sprint:false,kick:false,kickPower:0,control:false }; }
+      for (const p of room.players.values()) { p.ready = false; p.input = { x:0,y:0,sprint:false,kick:false,kickPower:0,control:false,tackle:false,facing:p.facing }; p._tackleInputHeld = false; p.tackleUntil = 0; p.tackleCooldownUntil = 0; }
       broadcastRoom(room);
     }
   });

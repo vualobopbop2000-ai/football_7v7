@@ -49,10 +49,10 @@
 
       <section id="gameScreen" class="screen hidden">
         <div class="game-header"><div><p class="eyebrow">LIVE MATCH / 60 TICK</p><h2>SÂN ĐẤU</h2></div><div class="scoreboard"><div class="score-team"><span class="score-dot red-symbol"></span><span>ĐỎ</span><b id="redScore">0</b></div><div class="match-clock" id="matchClock">05:00</div><div class="score-team"><b id="blueScore">0</b><span>XANH</span><span class="score-dot blue-symbol"></span></div></div></div>
-        <div class="field-wrap"><canvas id="gameCanvas" width="1200" height="700" aria-label="Sân bóng 2D"></canvas><div id="countdownOverlay" class="countdown-overlay hidden"><span id="countdownNumber">3</span><small>TRẬN ĐẤU BẮT ĐẦU</small></div></div>
+        <div class="field-wrap"><canvas id="gameCanvas" width="1280" height="720" aria-label="Sân bóng 2D"></canvas><canvas id="minimapCanvas" width="180" height="105" aria-label="Bản đồ nhỏ"></canvas><div id="countdownOverlay" class="countdown-overlay hidden"><span id="countdownNumber">3</span><small>TRẬN ĐẤU BẮT ĐẦU</small></div></div>
         <div class="game-controls">
           <div class="joystick-area"><div id="joystick" class="joystick"><div id="joystickKnob" class="joystick-knob"></div></div><span>DI CHUYỂN</span></div>
-          <div class="control-buttons"><button id="sprintBtn" class="control-btn sprint-btn">⚡<small>TĂNG TỐC</small></button><button id="controlBtn" class="control-btn">◉<small>ĐỠ BÓNG</small></button><button id="kickBtn" class="control-btn kick-btn">➤<small>SÚT / CHUYỀN</small></button></div>
+          <div class="control-buttons"><button id="sprintBtn" class="control-btn sprint-btn">⚡<small>TĂNG TỐC</small></button><button id="controlBtn" class="control-btn">◉<small>ĐỠ BÓNG</small></button><button id="kickBtn" class="control-btn kick-btn">➤<small>SÚT / CHUYỀN</small></button><button id="tackleBtn" class="control-btn tackle-btn">↘<small>XOẠC BÓNG</small></button></div>
         </div>
       </section>
 

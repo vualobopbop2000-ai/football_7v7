@@ -5,7 +5,8 @@
     ws: null, connected: false, id: null, name: "", room: null, rooms: [],
     ready: false, isHost: false, field: { width: 1200, height: 700, goalHeight: 190, margin: 34 },
     snapshot: null, countdown: null, kickHeld: false, kickStart: 0,
-    input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false },
+    input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false },
+    facing: { x: 1, y: 0 }, tackleReadyAt: 0,
     joystickPointer: null, joystickOrigin: null, toastTimer: null
   };
   function showScreen(id) { screens.forEach(s => $(s).classList.toggle("hidden", s !== id)); }
@@ -61,7 +62,9 @@
         $("countdownOverlay").classList.add("hidden");
         showScreen("gameScreen"); break;
       case "snapshot":
-        state.snapshot = msg; updateHud(msg); break;
+        state.snapshot = msg;
+        { const me = (msg.players || []).find(p => p.id === state.id); if (me && me.facing && Math.hypot(me.facing.x, me.facing.y) > 0.1) state.facing = { x: me.facing.x, y: me.facing.y }; }
+        updateHud(msg); break;
       case "gameOver":
         $("finalRed").textContent = msg.score.red;
         $("finalBlue").textContent = msg.score.blue;
@@ -148,6 +151,7 @@
     if (len > max) { dx = dx / len * max; dy = dy / len * max; }
     knob.style.transform = `translate(${dx}px,${dy}px)`;
     state.input.x = dx / max; state.input.y = dy / max;
+    if (Math.hypot(state.input.x, state.input.y) > .18) { const n = Math.hypot(state.input.x, state.input.y); state.facing.x = state.input.x / n; state.facing.y = state.input.y / n; }
   }
   function resetJoystick() {
     state.joystickPointer = null; state.input.x = 0; state.input.y = 0; knob.style.transform = "translate(0,0)";
@@ -166,6 +170,13 @@
   }
   holdButton("sprintBtn", () => state.input.sprint = true, () => state.input.sprint = false);
   holdButton("controlBtn", () => state.input.control = true, () => state.input.control = false);
+  holdButton("tackleBtn", () => {
+    const now = performance.now();
+    if (now < state.tackleReadyAt) { toast(`Xoạc bóng hồi chiêu ${Math.ceil((state.tackleReadyAt-now)/1000)}s`); return; }
+    state.tackleReadyAt = now + 2000; state.input.tackle = true;
+    send("input", { input: { ...state.input, tackle: true, facing: { ...state.facing } } });
+    setTimeout(() => { state.input.tackle = false; }, 120);
+  }, () => {});
   holdButton("kickBtn", () => { state.kickHeld = true; state.kickStart = performance.now(); state.input.kick = true; }, () => {
     state.input.kickPower = Math.min(1, .2 + (performance.now() - state.kickStart) / 900);
     state.input.kick = false; state.kickHeld = false;
@@ -179,6 +190,7 @@
     if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") state.input.y = 1;
     if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") state.input.x = -1;
     if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") state.input.x = 1;
+    if (Math.hypot(state.input.x, state.input.y) > .18) { const n = Math.hypot(state.input.x, state.input.y); state.facing = { x: state.input.x/n, y: state.input.y/n }; }
     if (e.key === "Shift") state.input.sprint = true;
     if (e.key.toLowerCase() === "e") state.input.control = true;
     if (e.key === " ") { state.kickHeld = true; state.kickStart = performance.now(); }
@@ -201,11 +213,12 @@
   // Send latest input at 30 Hz; server simulates at 60 Hz.
   setInterval(() => {
     if (state.room && state.room.status === "playing") {
-      send("input", { input: { ...state.input, kick: false, kickPower: state.input.kickPower } });
+      send("input", { input: { ...state.input, facing: { ...state.facing }, kick: false, kickPower: state.input.kickPower } });
     }
   }, 1000 / 30);
 
   const canvas = $("gameCanvas"), ctx = canvas.getContext("2d");
+  const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d") : null;
   function drawField() {
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
@@ -226,30 +239,77 @@
     ctx.fillRect(0, h / 2 - gh / 2, 18, gh);
     ctx.fillRect(w - 18, h / 2 - gh / 2, 18, gh);
   }
+  function drawMinimap(s) {
+    if (!mctx || !s) return;
+    const w = minimap.width, h = minimap.height, fw = state.field.width || 1200, fh = state.field.height || 700;
+    mctx.clearRect(0, 0, w, h);
+    mctx.fillStyle = "rgba(255,255,255,.72)"; mctx.fillRect(0, 0, w, h);
+    mctx.strokeStyle = "rgba(12,65,53,.65)"; mctx.lineWidth = 1; mctx.strokeRect(2,2,w-4,h-4);
+    mctx.beginPath(); mctx.moveTo(w/2,2); mctx.lineTo(w/2,h-2); mctx.stroke();
+    for (const p of (s.players || [])) {
+      mctx.fillStyle = p.team === "red" ? "#ff4059" : "#2878ef";
+      mctx.beginPath(); mctx.arc(p.x/fw*w, p.y/fh*h, p.id === state.id ? 3.5 : 2.7, 0, Math.PI*2); mctx.fill();
+    }
+    if (s.ball) { mctx.fillStyle="#111"; mctx.beginPath(); mctx.arc(s.ball.x/fw*w,s.ball.y/fh*h,2,0,Math.PI*2); mctx.fill(); }
+  }
   function draw() {
-    drawField();
     const s = state.snapshot;
+    const vw = canvas.width, vh = canvas.height;
+    ctx.clearRect(0, 0, vw, vh);
+    // Camera follows this client only. Keep a moderate zoom and clamp at field edges.
+    const fw = state.field.width || 1200, fh = state.field.height || 700;
+    const me = s && s.players ? s.players.find(p => p.id === state.id) : null;
+    const zoom = Math.min(1.18, vw / 920, vh / 520);
+    const worldViewW = vw / zoom, worldViewH = vh / zoom;
+    let camX = me ? me.x : fw/2, camY = me ? me.y : fh/2;
+    camX = Math.max(worldViewW/2, Math.min(fw-worldViewW/2, camX));
+    camY = Math.max(worldViewH/2, Math.min(fh-worldViewH/2, camY));
+    ctx.save();
+    ctx.translate(vw/2, vh/2); ctx.scale(zoom, zoom); ctx.translate(-camX, -camY);
+    // Draw pitch in server world coordinates, not viewport coordinates.
+    ctx.fillStyle = "#0a493b"; ctx.fillRect(0, 0, fw, fh);
+    const stripe = 75;
+    for (let x = 0; x < fw; x += stripe * 2) { ctx.fillStyle = "#ffffff08"; ctx.fillRect(x, 0, stripe, fh); }
+    ctx.strokeStyle = "#d4f7e5a8"; ctx.lineWidth = 3;
+    ctx.strokeRect(34, 34, fw-68, fh-68);
+    ctx.beginPath(); ctx.moveTo(fw/2, 34); ctx.lineTo(fw/2, fh-34); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fw/2, fh/2, 92, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fw/2, fh/2, 4, 0, Math.PI*2); ctx.fillStyle="#d4f7e5"; ctx.fill();
+    const gh = 190, boxW = 135, boxH = 320;
+    ctx.strokeRect(34, fh/2-boxH/2, boxW, boxH);
+    ctx.strokeRect(fw-34-boxW, fh/2-boxH/2, boxW, boxH);
+    ctx.strokeRect(34, fh/2-gh/2, 22, gh);
+    ctx.strokeRect(fw-56, fh/2-gh/2, 22, gh);
+    ctx.fillStyle="#d4f7e522"; ctx.fillRect(0,fh/2-gh/2,18,gh); ctx.fillRect(fw-18,fh/2-gh/2,18,gh);
     if (s) {
       s.players.forEach(p => {
         const color = p.team === "red" ? "#ff4d62" : "#448cff";
-        ctx.save();
-        ctx.shadowColor = color; ctx.shadowBlur = 13;
-        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(p.x, p.y, 17, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0; ctx.strokeStyle = "#ffffffcc"; ctx.lineWidth = 2; ctx.stroke();
-        ctx.fillStyle = "#fff"; ctx.font = "bold 14px Inter"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(p.id === state.id ? "★" : p.name.slice(0, 1).toUpperCase(), p.x, p.y);
-        ctx.fillStyle = "#e8f4ff"; ctx.font = "12px Inter"; ctx.textBaseline = "bottom";
-        ctx.fillText(p.name, p.x, p.y - 23);
-        ctx.fillStyle = "#07111c"; ctx.fillRect(p.x - 19, p.y + 22, 38, 4);
-        ctx.fillStyle = "#39e6d0"; ctx.fillRect(p.x - 19, p.y + 22, 38 * p.stamina / 100, 4);
+        ctx.save(); ctx.shadowColor=color; ctx.shadowBlur=13; ctx.fillStyle=color;
+        ctx.beginPath(); ctx.arc(p.x,p.y,17,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0; ctx.strokeStyle="#ffffffcc"; ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle="#fff"; ctx.font="bold 14px Inter"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(p.id === state.id ? "★" : p.name.slice(0,1).toUpperCase(),p.x,p.y);
+        ctx.fillStyle="#e8f4ff"; ctx.font="12px Inter"; ctx.textBaseline="bottom"; ctx.fillText(p.name,p.x,p.y-23);
+        ctx.fillStyle="#07111c"; ctx.fillRect(p.x-19,p.y+22,38,4);
+        ctx.fillStyle="#39e6d0"; ctx.fillRect(p.x-19,p.y+22,38*Math.max(0,p.stamina||0)/100,p.y ? 4 : 4);
+        // Facing arrow is shown only for the local player's own character.
+        if (p.id === state.id) {
+          const fx = state.facing.x, fy = state.facing.y;
+          ctx.strokeStyle="#ffffff"; ctx.fillStyle="#ffffff"; ctx.lineWidth=3;
+          ctx.beginPath(); ctx.moveTo(p.x+fx*10,p.y+fy*10); ctx.lineTo(p.x+fx*34,p.y+fy*34); ctx.stroke();
+          const a=Math.atan2(fy,fx), tipX=p.x+fx*36, tipY=p.y+fy*36;
+          ctx.beginPath(); ctx.moveTo(tipX,tipY); ctx.lineTo(tipX-10*Math.cos(a-.48),tipY-10*Math.sin(a-.48)); ctx.lineTo(tipX-10*Math.cos(a+.48),tipY-10*Math.sin(a+.48)); ctx.closePath(); ctx.fill();
+        }
         ctx.restore();
       });
-      const b = s.ball;
-      ctx.save(); ctx.shadowColor = "#fff"; ctx.shadowBlur = 14; ctx.fillStyle = "#f4f8ff";
-      ctx.beginPath(); ctx.arc(b.x, b.y, 10, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0; ctx.strokeStyle = "#122433"; ctx.lineWidth = 2; ctx.stroke();
-      ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI * 2); ctx.fillStyle = "#122433"; ctx.fill(); ctx.restore();
+      const b=s.ball; ctx.save(); ctx.shadowColor="#fff"; ctx.shadowBlur=14; ctx.fillStyle="#f4f8ff";
+      ctx.beginPath(); ctx.arc(b.x,b.y,10,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; ctx.strokeStyle="#122433"; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x,b.y,3,0,Math.PI*2); ctx.fillStyle="#122433"; ctx.fill(); ctx.restore();
+      const meNow = s.players.find(p => p.id === state.id);
+      if (meNow && typeof meNow.tackleCooldown === "number" && meNow.tackleCooldown > 0) state.tackleReadyAt = performance.now() + meNow.tackleCooldown;
+      drawMinimap(s);
     }
+    ctx.restore();
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);

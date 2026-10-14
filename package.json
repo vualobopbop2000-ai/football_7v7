@@ -1,14 +1,12 @@
 {
-  "name": "football2d-authoritative",
-  "version": "0.1.0",
+  "name": "neon-football-2d",
+  "version": "0.2.0",
   "private": true,
-  "description": "Authoritative multiplayer 2D football game starter",
+  "description": "Authoritative multiplayer 2D football game",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node server.js"
   },
-  "engines": { "node": ">=20" },
   "dependencies": {
     "express": "^4.21.2",
     "ws": "^8.18.0"
