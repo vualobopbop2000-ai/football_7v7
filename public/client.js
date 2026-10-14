@@ -4,7 +4,6 @@
   const state = {
     ws: null, connected: false, id: null, name: "", room: null, rooms: [],
     ready: false, isHost: false,
-    // Đồng bộ chuẩn xác theo FIELD trên server.js
     field: { width: 2400, height: 1400, goalHeight: 190, margin: 50 },
     snapshot: null, countdown: null, kickHeld: false, kickStart: 0, kickChargeFrame: 0,
     input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false },
@@ -90,9 +89,18 @@
         break;
       case "countdown":
         state.countdown = msg.value;
-        $("countdownNumber").textContent = msg.value;
-        $("countdownOverlay").classList.remove("hidden");
-        showScreen("gameScreen");
+        if (msg.value <= 0) {
+          $("countdownOverlay").classList.add("hidden");
+        } else {
+          $("countdownNumber").textContent = msg.value;
+          const sub = $("countdownOverlay").querySelector("small");
+          if (sub) sub.textContent = msg.text || "TRẬN ĐẤU BẮT ĐẦU";
+          $("countdownOverlay").classList.remove("hidden");
+          showScreen("gameScreen");
+        }
+        break;
+      case "matchResumed":
+        $("countdownOverlay").classList.add("hidden");
         break;
       case "matchStarted":
         if (msg.field) state.field = msg.field;
@@ -194,9 +202,7 @@
   $("playAgainBtn").addEventListener("click", () => send("playAgain"));
   $("resultLeaveBtn").addEventListener("click", () => send("leaveRoom"));
 
-  // ==========================================
-  // XỬ LÝ JOYSTICK ĐÃ ĐƯỢC FIX TOẠ ĐỘ XOAY 90°
-  // ==========================================
+  // Joystick
   const joy = $("joystick"), knob = $("joystickKnob");
   function joystickMove(clientX, clientY) {
     const r = joy.getBoundingClientRect();
@@ -205,14 +211,10 @@
     const screenDx = clientX - cx;
     const screenDy = clientY - cy;
 
-    // Kiểm tra xem màn hình có đang bị xoay 90 độ bởi CSS fallback portrait hay không
     const isPortraitRotated = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 
     let localDx, localDy;
     if (isPortraitRotated) {
-      // Khi container xoay 90deg theo chiều kim đồng hồ:
-      // X của container tương ứng với Y của màn hình
-      // Y của container tương ứng với -X của màn hình
       localDx = screenDy;
       localDy = -screenDx;
     } else {
@@ -228,7 +230,6 @@
       clampedY = (localDy / len) * max;
     }
 
-    // Nút kéo sẽ di chuyển chính xác theo ngón tay trên màn hình
     knob.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
     state.input.x = clampedX / max;
     state.input.y = clampedY / max;
@@ -262,9 +263,7 @@
   joy.addEventListener("pointerup", e => { if (state.joystickPointer === e.pointerId) resetJoystick(); });
   joy.addEventListener("pointercancel", resetJoystick);
 
-  // ==========================================
-  // XỬ LÝ CÁC NÚT BẤM THAO TÁC
-  // ==========================================
+  // Các nút bấm
   function holdButton(id, onDown, onUp) {
     const el = $(id);
     if (!el) return;
@@ -314,7 +313,7 @@
     setTimeout(() => { state.input.kickPower = 0; }, 80);
   });
 
-  // Bàn phím máy tính
+  // Bàn phím
   window.addEventListener("keydown", e => {
     if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
     if (e.repeat) return;
@@ -359,9 +358,7 @@
     }
   }, 1000 / 30);
 
-  // ==========================================
-  // RENDER SÂN CỎ VÀ CẦU THỦ (LUÔN CĂN GIỮA)
-  // ==========================================
+  // Render Canvas
   const canvas = $("gameCanvas"), ctx = canvas.getContext("2d");
   const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d") : null;
 
@@ -396,7 +393,6 @@
 
   function draw() {
     const s = state.snapshot;
-    // Tự động căn chỉnh độ phân giải canvas thật theo pixel màn hình
     const rect = canvas.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -414,7 +410,6 @@
     const fw = state.field.width || 2400, fh = state.field.height || 1400;
     const me = s && s.players ? s.players.find(p => p.id === state.id) : null;
 
-    // CAMERA: Cầu thủ người chơi LUÔN nằm ngay chính giữa màn hình (vw/2, vh/2)
     const camX = me ? me.x : fw / 2;
     const camY = me ? me.y : fh / 2;
     const zoom = Math.min(vw / 1100, vh / 680);
@@ -424,22 +419,22 @@
     ctx.scale(zoom, zoom);
     ctx.translate(-camX, -camY);
 
-    // Vẽ nền cỏ bao bọc xung quanh sân (đảm bảo không bao giờ bị cắt cụt hay hở viền đen)
+    // Nền ngoài sân
     ctx.fillStyle = "#074837";
     ctx.fillRect(-1000, -1000, fw + 2000, fh + 2000);
 
-    // Mặt cỏ chính
+    // Mặt cỏ
     ctx.fillStyle = "#0a493b";
     ctx.fillRect(0, 0, fw, fh);
 
-    // Sọc cỏ xen kẽ
+    // Sọc cỏ
     const stripe = 90;
     for (let x = 0; x < fw; x += stripe * 2) {
       ctx.fillStyle = "#ffffff09";
       ctx.fillRect(x, 0, stripe, fh);
     }
 
-    // Vạch biên (margin = 50)
+    // Đường biên
     const m = state.field.margin || 50;
     ctx.strokeStyle = "#d4f7e5b5";
     ctx.lineWidth = 4;
@@ -459,20 +454,20 @@
     ctx.fillStyle = "#d4f7e5";
     ctx.fill();
 
-    // Vòng cấm và khung thành 2 bên
+    // Vòng cấm
     const gh = state.field.goalHeight || 190;
     const boxW = 180, boxH = 400;
     ctx.strokeRect(m, fh / 2 - boxH / 2, boxW, boxH);
     ctx.strokeRect(fw - m - boxW, fh / 2 - boxH / 2, boxW, boxH);
 
-    // Lưới khung thành
+    // Khung thành
     ctx.fillStyle = "#d4f7e522";
     ctx.fillRect(m - 35, fh / 2 - gh / 2, 35, gh);
     ctx.strokeRect(m - 35, fh / 2 - gh / 2, 35, gh);
     ctx.fillRect(fw - m, fh / 2 - gh / 2, 35, gh);
     ctx.strokeRect(fw - m, fh / 2 - gh / 2, 35, gh);
 
-    // Vẽ Cầu thủ và Bóng
+    // Cầu thủ & Bóng
     if (s) {
       s.players.forEach(p => {
         const color = p.team === "red" ? "#ff4d62" : "#448cff";
@@ -500,13 +495,11 @@
         ctx.textBaseline = "bottom";
         ctx.fillText(p.name, p.x, p.y - 23);
 
-        // Thanh thể lực
         ctx.fillStyle = "#07111c";
         ctx.fillRect(p.x - 19, p.y + 22, 38, 4);
         ctx.fillStyle = "#39e6d0";
         ctx.fillRect(p.x - 19, p.y + 22, (38 * Math.max(0, p.stamina || 0)) / 100, 4);
 
-        // Mũi tên định hướng cho chính người chơi
         if (p.id === state.id) {
           const fx = state.facing.x, fy = state.facing.y;
           ctx.strokeStyle = "#ffffff";
@@ -527,7 +520,6 @@
         ctx.restore();
       });
 
-      // Quả bóng
       const b = s.ball;
       ctx.save();
       ctx.shadowColor = "#fff";
