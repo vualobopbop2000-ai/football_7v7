@@ -353,3 +353,133 @@
   #gameScreen:not(.hidden) #tackleBtn { grid-column:3 !important; grid-row:2 !important; }
 }
 /* On desktop and landscape, keep the initial menu/lobby visible unless activated. */
+
+
+/* V7: Native portrait viewport, full-bleed pitch, correctly aligned touch controls.
+   Avoid rotating the entire DOM: transformed pointer coordinates caused the joystick
+   and HUD to appear on the wrong side and left black gutters on some mobile browsers. */
+@media (max-width: 700px) and (orientation: portrait) {
+  html, body {
+    width:100%; height:100%; min-height:100%;
+    margin:0; overflow:hidden !important;
+    overscroll-behavior:none; background:#07503f !important;
+  }
+  body:has(#gameScreen:not(.hidden)) .app-shell,
+  body:has(#gameScreen:not(.hidden)) main {
+    width:100vw !important; height:100dvh !important;
+    min-height:0 !important; max-width:none !important;
+    padding:0 !important; margin:0 !important; overflow:hidden !important;
+  }
+  body:has(#gameScreen:not(.hidden)) .topbar,
+  body:has(#gameScreen:not(.hidden)) footer { display:none !important; }
+  #gameScreen:not(.hidden) {
+    display:block !important; position:fixed !important;
+    inset:0 !important; width:100vw !important; height:100dvh !important;
+    min-width:0 !important; min-height:0 !important;
+    max-width:none !important; margin:0 !important; padding:0 !important;
+    border:0 !important; overflow:hidden !important;
+    transform:none !important; transform-origin:center !important;
+    background:#07503f !important; z-index:9999 !important;
+  }
+  #gameScreen:not(.hidden) .game-header {
+    position:absolute !important; top:max(8px, env(safe-area-inset-top)) !important;
+    left:0 !important; right:0 !important; width:100% !important;
+    margin:0 !important; padding:0 10px !important;
+    display:flex !important; justify-content:center !important;
+    z-index:30 !important; pointer-events:none !important;
+  }
+  #gameScreen:not(.hidden) .game-header>div:first-child { display:none !important; }
+  #gameScreen:not(.hidden) .scoreboard { pointer-events:auto !important; }
+  #gameScreen:not(.hidden) .field-wrap {
+    position:absolute !important; inset:0 !important;
+    display:block !important; width:100% !important; height:100% !important;
+    max-width:none !important; margin:0 !important; padding:0 !important;
+    border:0 !important; border-radius:0 !important; overflow:hidden !important;
+    background:#07503f !important; box-shadow:none !important;
+  }
+  #gameScreen:not(.hidden) #gameCanvas {
+    display:block !important; position:absolute !important; inset:0 !important;
+    width:100% !important; height:100% !important;
+    min-width:100% !important; min-height:100% !important;
+    max-width:none !important; max-height:none !important;
+    aspect-ratio:auto !important; object-fit:fill !important;
+    touch-action:none !important; background:#07503f !important;
+  }
+  #gameScreen:not(.hidden) #minimapCanvas {
+    position:absolute !important; top:max(10px, env(safe-area-inset-top)) !important;
+    right:max(10px, env(safe-area-inset-right)) !important;
+    left:auto !important; bottom:auto !important;
+    width:clamp(100px,25vw,145px) !important;
+    height:auto !important; aspect-ratio:12/7 !important;
+    z-index:31 !important; opacity:.82 !important;
+    background:rgba(238,245,247,.72) !important;
+    border:1px solid rgba(255,255,255,.65) !important; border-radius:8px !important;
+  }
+  #gameScreen:not(.hidden) .game-controls {
+    position:absolute !important; inset:0 !important; display:block !important;
+    width:100% !important; height:100% !important; padding:0 !important; margin:0 !important;
+    z-index:35 !important; pointer-events:none !important;
+  }
+  #gameScreen:not(.hidden) .joystick-area {
+    position:absolute !important; left:max(16px, env(safe-area-inset-left)) !important;
+    right:auto !important; bottom:max(18px, env(safe-area-inset-bottom)) !important;
+    top:auto !important; display:block !important; pointer-events:none !important;
+  }
+  #gameScreen:not(.hidden) .joystick-area>span { display:none !important; }
+  /* Double the previous joystick area (diameter × sqrt(2)); center the knob accurately. */
+  #gameScreen:not(.hidden) .joystick {
+    position:relative !important; width:142px !important; height:142px !important;
+    border-radius:50% !important; pointer-events:auto !important; touch-action:none !important;
+    background:rgba(190,210,220,.22) !important;
+    border:1px solid rgba(220,240,250,.42) !important;
+  }
+  #gameScreen:not(.hidden) .joystick:after {
+    inset:22% !important; pointer-events:none !important;
+  }
+  #gameScreen:not(.hidden) .joystick-knob {
+    width:58px !important; height:58px !important;
+    left:50% !important; top:50% !important;
+    margin:0 !important; transform:translate(-50%,-50%) !important;
+  }
+  /* Sprint stays at the bottom-right. The other three circular controls sit on
+     the left arc of a ring centered on the sprint button. */
+  #gameScreen:not(.hidden) .control-buttons {
+    position:absolute !important; right:14px !important;
+    bottom:max(18px, env(safe-area-inset-bottom)) !important;
+    left:auto !important; top:auto !important;
+    display:block !important; width:300px !important; height:300px !important;
+    overflow:visible !important; pointer-events:none !important;
+  }
+  #gameScreen:not(.hidden) .control-buttons:before {
+    content:""; position:absolute; right:0; bottom:0;
+    width:252px; height:252px; border-radius:50%;
+    border:1px solid rgba(220,240,250,.28);
+    background:rgba(190,210,220,.035); pointer-events:none;
+  }
+  #gameScreen:not(.hidden) .control-btn {
+    position:absolute !important; display:flex !important;
+    flex-direction:column !important; align-items:center !important; justify-content:center !important;
+    width:76px !important; height:76px !important; padding:0 !important;
+    border-radius:50% !important; gap:4px !important;
+    background:rgba(16,37,56,.82) !important; backdrop-filter:blur(6px);
+    border:1px solid rgba(130,170,195,.48) !important;
+    font-size:22px !important; touch-action:none !important; pointer-events:auto !important;
+    z-index:2 !important;
+  }
+  #gameScreen:not(.hidden) .control-btn small {
+    display:block !important; font-size:7px !important; white-space:nowrap !important;
+    letter-spacing:0 !important;
+  }
+  #gameScreen:not(.hidden) #sprintBtn {
+    right:0 !important; bottom:0 !important; left:auto !important; top:auto !important;
+    width:100px !important; height:100px !important;
+    border:2px solid rgba(255,207,82,.72) !important;
+    background:rgba(30,35,40,.86) !important; color:#ffcf52 !important;
+    font-size:34px !important; z-index:4 !important;
+  }
+  #gameScreen:not(.hidden) #controlBtn { left:104px !important; top:8px !important; right:auto !important; bottom:auto !important; }
+  #gameScreen:not(.hidden) #kickBtn { left:24px !important; top:104px !important; right:auto !important; bottom:auto !important; }
+  #gameScreen:not(.hidden) #tackleBtn { left:104px !important; top:200px !important; right:auto !important; bottom:auto !important; }
+  #gameScreen:not(.hidden) .kick-charge-track { left:20% !important; right:20% !important; bottom:10% !important; height:4px !important; }
+  #gameScreen:not(.hidden) .countdown-overlay { z-index:40 !important; }
+}

@@ -185,12 +185,12 @@
     let dx = clientX - cx, dy = clientY - cy;
     const max = r.width * .32, len = Math.hypot(dx, dy);
     if (len > max) { dx = dx / len * max; dy = dy / len * max; }
-    knob.style.transform = `translate(${dx}px,${dy}px)`;
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
     state.input.x = dx / max; state.input.y = dy / max;
     if (Math.hypot(state.input.x, state.input.y) > .18) { const n = Math.hypot(state.input.x, state.input.y); state.facing.x = state.input.x / n; state.facing.y = state.input.y / n; }
   }
   function resetJoystick() {
-    state.joystickPointer = null; state.input.x = 0; state.input.y = 0; knob.style.transform = "translate(0,0)";
+    state.joystickPointer = null; state.input.x = 0; state.input.y = 0; knob.style.transform = "translate(-50%,-50%)";
   }
   joy.addEventListener("pointerdown", e => { e.preventDefault(); state.joystickPointer = e.pointerId; joy.setPointerCapture(e.pointerId); joystickMove(e.clientX, e.clientY); });
   joy.addEventListener("pointermove", e => { if (state.joystickPointer === e.pointerId) { e.preventDefault(); joystickMove(e.clientX, e.clientY); } });
