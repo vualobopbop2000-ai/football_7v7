@@ -1,8 +1,46 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
 :root{--bg:#07111c;--panel:#0d1b2a;--panel2:#102338;--line:#1e3549;--text:#eff7ff;--muted:#91a6ba;--cyan:#39e6d0;--red:#ff4d62;--blue:#448cff;--yellow:#ffca65}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 70% -15%,#17334a 0,transparent 45%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}body{min-height:100dvh}.app-shell{max-width:1440px;margin:auto;padding:0 30px;min-height:100dvh;display:flex;flex-direction:column}.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1b3041}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text);font-weight:800;letter-spacing:.08em;font-size:14px}.brand-mark{display:grid;place-items:center;width:34px;height:34px;background:var(--cyan);color:#06202a;clip-path:polygon(18% 0,100% 0,100% 82%,82% 100%,0 100%,0 18%);font:900 24px 'Barlow Condensed',sans-serif}.brand-accent{color:var(--cyan);margin-left:4px}.connection{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.dot{width:8px;height:8px;border-radius:50%;background:#ffb84a;box-shadow:0 0 12px currentColor}.dot.online{background:var(--cyan)}main{flex:1;padding:46px 0}.screen{animation:fadeIn .25s ease}@keyframes fadeIn{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}.hidden{display:none!important}.menu-screen{display:grid;grid-template-columns:1fr minmax(330px,440px);gap:70px;align-items:center;min-height:570px}.hero-copy{padding:30px 0}.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.22em;margin:0 0 15px}.hero-copy h1{font:900 clamp(46px,6vw,84px)/.91 'Barlow Condensed',sans-serif;letter-spacing:-.02em;margin:0}.hero-copy h1 span{color:var(--cyan)}.subhead{color:var(--muted);max-width:390px;line-height:1.8;font-size:14px;margin-top:25px}.panel{background:linear-gradient(145deg,rgba(17,39,57,.97),rgba(10,25,39,.98));border:1px solid var(--line);border-radius:12px;box-shadow:0 20px 60px #0002}.menu-panel{padding:26px}.menu-panel label{font-size:10px;font-weight:800;letter-spacing:.15em;color:#b9cad9;display:block;margin-bottom:10px}input{width:100%;height:46px;background:#071522;border:1px solid #294157;border-radius:6px;color:var(--text);padding:0 13px;font:inherit;outline:none;margin-bottom:13px}input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #39e6d01c}.btn{min-height:44px;padding:0 17px;border:1px solid transparent;border-radius:6px;font:800 11px Inter,sans-serif;letter-spacing:.07em;cursor:pointer;transition:.15s;white-space:nowrap}.btn:disabled{opacity:.35;cursor:not-allowed}.btn-primary{background:var(--cyan);color:#05242b}.btn-primary:not(:disabled):hover{background:#8affee;transform:translateY(-1px)}.btn-secondary{background:#193b48;color:var(--cyan);border-color:#28616a}.btn-secondary.active{background:#174d45;border-color:var(--cyan)}.btn-ghost{background:transparent;color:#b5c6d5;border-color:#2a4054}.btn-ghost:hover{border-color:#7691a8}.menu-panel>.btn{width:100%}.section-heading{display:flex;align-items:center;justify-content:space-between;margin:28px 0 13px;font-size:10px;font-weight:800;letter-spacing:.14em}.tiny-pill{background:#1a3447;color:#9db2c4;padding:5px 7px;border-radius:4px;font-size:9px}.room-list{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow:auto}.empty-state{padding:18px 10px;text-align:center;border:1px dashed #2a4054;border-radius:6px;color:#8196aa;font-size:12px}.room-row{display:flex;align-items:center;gap:12px;padding:12px;background:#0a1926;border:1px solid #1b3347;border-radius:7px}.room-id{font:700 17px 'Barlow Condensed',sans-serif;letter-spacing:.1em}.room-meta{font-size:10px;color:var(--muted);margin-top:4px}.room-row .btn{margin-left:auto;min-height:35px;padding:0 12px}.microcopy,.hint{color:#7e94a8;font-size:10px;line-height:1.7}.microcopy{margin:15px 0 0}.page-heading,.game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}.page-heading h2,.game-header h2,.result-panel h2{font:800 40px/.95 'Barlow Condensed',sans-serif;letter-spacing:.03em;margin:0}.muted{color:var(--muted);font-size:12px}.page-heading .muted{margin:10px 0 0}.page-heading strong{color:var(--cyan);letter-spacing:.13em}.lobby-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.team-panel{padding:22px;min-height:230px}.red-panel{border-top:2px solid var(--red)}.blue-panel{border-top:2px solid var(--blue)}.team-title{display:flex;align-items:center;gap:12px;padding-bottom:17px;border-bottom:1px solid var(--line)}.team-title h3{font:800 21px 'Barlow Condensed',sans-serif;margin:0;letter-spacing:.08em}.team-title p{font-size:11px;color:var(--muted);margin:3px 0 0}.team-symbol,.score-dot{display:inline-block;width:12px;height:12px;border-radius:3px}.red-symbol{background:var(--red);box-shadow:0 0 12px #ff4d6240}.blue-symbol{background:var(--blue);box-shadow:0 0 12px #448cff40}.player-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:15px}.player-chip{display:flex;align-items:center;gap:8px;min-width:0;padding:10px;background:#091724;border:1px solid #1c3447;border-radius:5px;font-size:11px}.player-chip .avatar{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:5px;background:#1c3447;font-size:10px;font-weight:800}.player-chip .p-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.player-chip .host-tag{color:var(--yellow);font-size:9px;margin-left:auto}.ready-mark{margin-left:auto;color:var(--cyan)}.lobby-footer{margin-top:18px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px}.ready-info{display:flex;align-items:center;gap:13px}.ready-number{font:800 29px 'Barlow Condensed',sans-serif;color:var(--cyan)}.ready-info strong{font-size:10px;letter-spacing:.1em}.ready-info p{margin:5px 0 0;font-size:10px}.lobby-actions{display:flex;gap:9px}.hint{margin-top:12px}.game-header{gap:20px}.scoreboard{display:flex;align-items:center;gap:22px;background:#0b1b29;border:1px solid #234057;padding:10px 20px;border-radius:8px}.score-team{display:flex;align-items:center;gap:9px;font-size:10px;font-weight:800;letter-spacing:.1em}.score-team b{font:800 28px 'Barlow Condensed',sans-serif}.match-clock{font:800 22px 'Barlow Condensed',sans-serif;color:var(--cyan);padding:0 16px;border-left:1px solid #284054;border-right:1px solid #284054}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 70% -15%,#17334a 0,transparent 45%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}body{min-height:100dvh}.app-shell{max-width:1440px;margin:auto;padding:0 30px;min-height:100dvh;display:flex;flex-direction:column}.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1b3041}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text);font-weight:800;letter-spacing:.08em;font-size:14px}.brand-mark{display:grid;place-items:center;width:34px;height:34px;background:var(--cyan);color:#06202a;clip-path:polygon(18% 0,100% 0,100% 82%,82% 100%,0 100%,0 18%);font:900 24px 'Barlow Condensed',sans-serif}.brand-accent{color:var(--cyan);margin-left:4px}.connection{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.dot{width:8px;height:8px;border-radius:50%;background:#ffb84a;box-shadow:0 0 12px currentColor}.dot.online{background:var(--cyan)}main{flex:1;padding:46px 0}.screen{animation:fadeIn .25s ease}@keyframes fadeIn{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}.hidden{display:none!important}.menu-screen{display:grid;grid-template-columns:1fr minmax(330px,440px);gap:70px;align-items:center;min-height:570px}.hero-copy{padding:30px 0}.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.22em;margin:0 0 15px}.hero-copy h1{font:900 clamp(46px,6vw,84px)/.91 'Barlow Condensed',sans-serif;letter-spacing:-.02em;margin:0}.hero-copy h1 span{color:var(--cyan)}.subhead{color:var(--muted);max-width:390px;line-height:1.8;font-size:14px;margin-top:25px}.panel{background:linear-gradient(145deg,rgba(17,39,57,.97),rgba(10,25,39,.98));border:1px solid var(--line);border-radius:12px;box-shadow:0 20px 60px #0002}.menu-panel{padding:26px}.menu-panel label{font-size:10px;font-weight:800;letter-spacing:.15em;color:#b9cad9;display:block;margin-bottom:10px}input{width:100%;height:46px;background:#071522;border:1px solid #294157;border-radius:6px;color:var(--text);padding:0 13px;font:inherit;outline:none;margin-bottom:13px}input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #39e6d01c}.btn{min-height:44px;padding:0 17px;border:1px solid transparent;border-radius:6px;font:800 11px Inter,sans-serif;letter-spacing:.07em;cursor:pointer;transition:.15s;white-space:nowrap}.btn:disabled{opacity:.35;cursor:not-allowed}.btn-primary{background:var(--cyan);color:#05242b}.btn-primary:not(:disabled):hover{background:#8affee;transform:translateY(-1px)}.btn-secondary{background:#193b48;color:var(--cyan);border-color:#28616a}.btn-secondary.active{background:#174d45;border-color:var(--cyan)}.btn-ghost{background:transparent;color:#b5c6d5;border-color:#2a4054}.btn-ghost:hover{border-color:#7691a8}.menu-panel>.btn{width:100%}.section-heading{display:flex;align-items:center;justify-content:space-between;margin:28px 0 13px;font-size:10px;font-weight:800;letter-spacing:.14em}.tiny-pill{background:#1a3447;color:#9db2c4;padding:5px 7px;border-radius:4px;font-size:9px}.room-list{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow:auto}.empty-state{padding:18px 10px;text-align:center;border:1px dashed #2a4054;border-radius:6px;color:#8196aa;font-size:12px}.room-row{display:flex;align-items:center;gap:12px;padding:12px;background:#0a1926;border:1px solid #1b3347;border-radius:7px}.room-id{font:700 17px 'Barlow Condensed',sans-serif;letter-spacing:.1em}.room-meta{font-size:10px;color:var(--muted);margin-top:4px}.room-row .btn{margin-left:auto;min-height:35px;padding:0 12px}.microcopy,.hint{color:#7e94a8;font-size:10px;line-height:1.7}.microcopy{margin:15px 0 0}.page-heading,.game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}.page-heading h2,.game-header h2,.result-panel h2{font:800 40px/.95 'Barlow Condensed',sans-serif;letter-spacing:.03em;margin:0}.muted{color:var(--muted);font-size:12px}.page-heading .muted{margin:10px 0 0}.page-heading strong{color:var(--cyan);letter-spacing:.13em}.lobby-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.team-panel{padding:22px;min-height:230px}.red-panel{border-top:2px solid var(--red)}.blue-panel{border-top:2px solid var(--blue)}.team-title{display:flex;align-items:center;gap:12px;padding-bottom:17px;border-bottom:1px solid var(--line)}.team-title h3{font:800 21px 'Barlow Condensed',sans-serif;margin:0;letter-spacing:.08em}.team-title p{font-size:11px;color:var(--muted);margin:3px 0 0}.team-symbol,.score-dot{display:inline-block;width:12px;height:12px;border-radius:3px}.red-symbol{background:var(--red);box-shadow:0 0 12px #ff4d6240}.blue-symbol{background:var(--blue);box-shadow:0 0 12px #448cff40}.player-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:15px}.player-chip{display:flex;align-items:center;gap:8px;min-width:0;padding:10px;background:#091724;border:1px solid #1c3447;border-radius:5px;font-size:11px}.player-chip .avatar{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:5px;background:#1c3447;font-size:10px;font-weight:800}.player-chip .p-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.player-chip .host-tag{color:var(--yellow);font-size:9px;margin-left:auto}.ready-mark{margin-left:auto;color:var(--cyan)}.lobby-footer{margin-top:18px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px}.ready-info{display:flex;align-items:center;gap:13px}.ready-number{font:800 29px 'Barlow Condensed',sans-serif;color:var(--cyan)}.ready-info strong{font-size:10px;letter-spacing:.1em}.ready-info p{margin:5px 0 0;font-size:10px}.lobby-actions{display:flex;gap:9px}.hint{margin-top:12px}.game-header{gap:20px}
 
-/* Cụm Joystick phóng to x2 diện tích (đường kính tăng x1.414 lên 128px) */
+/* ====================================================
+   BẢNG TỈ SỐ & ĐỒNG HỒ (THU GỌN 1/2 SO VỚI GỐC)
+   ==================================================== */
+.scoreboard{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:rgba(11,27,41,.92);
+  border:1px solid #234057;
+  padding:4px 10px;
+  border-radius:6px;
+}
+.score-team{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+.score-team .score-dot{
+  width:7px;
+  height:7px;
+  border-radius:2px;
+}
+.score-team b{
+  font:800 14px 'Barlow Condensed',sans-serif;
+  line-height:1;
+}
+.match-clock{
+  font:800 12px 'Barlow Condensed',sans-serif;
+  color:var(--cyan);
+  padding:0 8px;
+  line-height:1;
+  border-left:1px solid #284054;
+  border-right:1px solid #284054;
+}
+
+/* Cụm Joystick */
 .joystick-area{display:flex;align-items:center;gap:15px;color:#6f879a;font-size:9px;font-weight:800;letter-spacing:.15em}
 .joystick{position:relative;width:128px;height:128px;border:2px solid #3d607b;background:rgba(17,40,58,.5);border-radius:50%;touch-action:none;box-shadow:inset 0 0 25px rgba(0,0,0,.45);backdrop-filter:blur(6px)}
 .joystick:after{content:"";position:absolute;inset:22px;border:1.5px dashed rgba(57,230,208,.3);border-radius:50%}
@@ -16,7 +54,9 @@
 .kick-btn{color:var(--cyan);border-color:rgba(57,230,208,.55)}
 .tackle-btn{color:#ff9aab;border-color:rgba(255,77,98,.55)}
 
-/* CỤM NÚT QUỸ ĐẠO */
+/* ====================================================
+   CỤM NÚT QUỸ ĐẠO (ĐÃ CĂN CHUẨN NÚT SÚT TRÊN ĐƯỜNG TRÒN)
+   ==================================================== */
 .control-buttons-cluster{
   position:relative;
   width:210px;
@@ -47,31 +87,35 @@
   z-index:1;
 }
 
+/* Các nút vệ tinh luôn có position: absolute */
 .satellite-btn{
-  position:absolute;
+  position:absolute !important;
   width:56px;
   height:56px;
   font-size:18px;
   z-index:6;
 }
-/* 1. Nút ĐỠ BÓNG */
+/* 1. Nút ĐỠ BÓNG (ở góc ngang 0°) */
 .control-btn-control{
   right: 120px;
   bottom: 30px;
 }
-/* 2. Nút SÚT (Nằm chính giữa Đỡ bóng và Xoạc) */
+/* 2. Nút SÚT (ở góc chéo 45° - chính giữa Đỡ bóng và Xoạc) */
 .control-btn-kick{
   right: 94px;
   bottom: 94px;
 }
-/* 3. Nút XOẠC */
+/* 3. Nút XOẠC (ở góc dọc 90°) */
 .control-btn-tackle{
   right: 30px;
   bottom: 120px;
 }
 
-/* Thanh gồng lực sút */
-.kick-btn{position:relative;overflow:hidden}
+/* Thanh gồng lực sút: Giữ nguyên position: absolute để không đè layout */
+.kick-btn{
+  position:absolute !important;
+  overflow:hidden;
+}
 .kick-charge-track{position:absolute;left:18%;right:18%;bottom:6px;height:3px;border-radius:3px;background:rgba(220,240,250,.25);overflow:hidden}
 #kickChargeFill{display:block;width:0%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#39e6d0,#ffca65,#ff4d62);transition:width .04s linear}
 
@@ -152,9 +196,9 @@
   #gameScreen:not(.hidden) .game-header>div:first-child { display:none !important; }
   #gameScreen:not(.hidden) .scoreboard {
     pointer-events:auto !important;
-    background:rgba(8,24,37,.88) !important;
-    padding:6px 14px !important;
-    border-radius:10px !important;
+    background:rgba(8,24,37,.9) !important;
+    padding:3px 8px !important;
+    border-radius:6px !important;
   }
 
   #gameScreen:not(.hidden) #minimapCanvas {
