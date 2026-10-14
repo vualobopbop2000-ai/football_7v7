@@ -7,6 +7,8 @@ const path = require("path");
 const PORT = Number(process.env.PORT || 3000);
 const TICK_RATE = 60;
 const DT = 1 / TICK_RATE;
+const SNAPSHOT_RATE = 30;
+const SNAPSHOT_INTERVAL_MS = 1000 / SNAPSHOT_RATE;
 const FIELD = { width: 2400, height: 1400, goalHeight: 190, margin: 50 };
 const MATCH_SECONDS = 5 * 60;
 const app = express();
@@ -66,7 +68,8 @@ function createRoom(host) {
     id, hostId: host.id, players: new Map(), status: "waiting",
     nextTeam: "red", countdownEnds: 0, countdownTimer: null,
     goalCountdownTimer: null, isGoalPausing: false,
-    state: null, loop: null, lastTick: Date.now(), startedAt: 0
+    state: null, loop: null, lastTick: Date.now(), startedAt: 0,
+    lastSnapshotAt: 0
   };
   rooms.set(id, room);
   joinRoom(host, room, true);
@@ -247,16 +250,19 @@ function tick(room) {
   if (room.isGoalPausing) {
     room.startedAt += (now - room.lastTick);
     room.lastTick = now;
-    const players = [...room.players.values()];
-    const snapshot = {
-      type: "snapshot", time: now, remaining: state.remaining, score: state.score,
-      ball: { x: state.ball.x, y: state.ball.y, vx: 0, vy: 0, ownerId: null },
-      players: players.map(p => ({
-        id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, stamina: p.stamina,
-        ready: p.ready, facing: p.facing, tackling: false, tackleCooldown: 0
-      }))
-    };
-    for (const p of players) send(p.ws, snapshot);
+    if (now - room.lastSnapshotAt >= SNAPSHOT_INTERVAL_MS) {
+      room.lastSnapshotAt = now;
+      const players = [...room.players.values()];
+      const snapshot = {
+        type: "snapshot", time: now, remaining: state.remaining, score: state.score,
+        ball: { x: state.ball.x, y: state.ball.y, vx: 0, vy: 0, ownerId: null },
+        players: players.map(p => ({
+          id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, stamina: p.stamina,
+          ready: p.ready, facing: p.facing, tackling: false, tackleCooldown: 0
+        }))
+      };
+      for (const p of players) send(p.ws, snapshot);
+    }
     return;
   }
 

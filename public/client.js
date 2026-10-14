@@ -386,8 +386,31 @@
   }, 1000 / 30);
 
   // Render Canvas
-  const canvas = $("gameCanvas"), ctx = canvas.getContext("2d");
-  const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d") : null;
+  const canvas = $("gameCanvas"), ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d", { alpha: true, desynchronized: true }) : null;
+  let canvasCssWidth = 0, canvasCssHeight = 0, canvasDpr = 1;
+  let lastMinimapSnapshot = null;
+  const isLowPowerDevice = window.matchMedia("(max-width: 768px)").matches;
+  function resizeGameCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    canvasCssWidth = rect.width;
+    canvasCssHeight = rect.height;
+    // Lower backing resolution on phones reduces fill-rate/GPU cost and improves FPS.
+    canvasDpr = Math.min(window.devicePixelRatio || 1, isLowPowerDevice ? 1.25 : 1.5);
+    const dw = Math.max(1, Math.round(canvasCssWidth * canvasDpr));
+    const dh = Math.max(1, Math.round(canvasCssHeight * canvasDpr));
+    if (canvas.width !== dw || canvas.height !== dh) {
+      canvas.width = dw;
+      canvas.height = dh;
+    }
+  }
+  resizeGameCanvas();
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(resizeGameCanvas).observe(canvas);
+  } else {
+    window.addEventListener("resize", resizeGameCanvas, { passive: true });
+  }
 
   function drawMinimap(s) {
     if (!mctx || !s) return;
@@ -420,17 +443,6 @@
 
   function draw() {
     const s = state.snapshot;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const dw = Math.round(rect.width * dpr);
-      const dh = Math.round(rect.height * dpr);
-      if (canvas.width !== dw || canvas.height !== dh) {
-        canvas.width = dw;
-        canvas.height = dh;
-      }
-    }
-
     const vw = canvas.width, vh = canvas.height;
     ctx.clearRect(0, 0, vw, vh);
 
@@ -499,14 +511,11 @@
       s.players.forEach(p => {
         const color = p.team === "red" ? "#ff4d62" : "#448cff";
         ctx.save();
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 14;
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 17, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.shadowBlur = 0;
         ctx.strokeStyle = "#ffffffdd";
         ctx.lineWidth = 2.5;
         ctx.stroke();
@@ -554,12 +563,8 @@
 
       ctx.save();
       if (isSuperShot) {
-        ctx.shadowColor = "#ffca65";
-        ctx.shadowBlur = 25;
         ctx.fillStyle = "#fff4d4";
       } else {
-        ctx.shadowColor = "#fff";
-        ctx.shadowBlur = 14;
         ctx.fillStyle = "#f4f8ff";
       }
 
@@ -567,7 +572,6 @@
       ctx.arc(b.x, b.y, 10, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.shadowBlur = 0;
       ctx.strokeStyle = isSuperShot ? "#ff4d62" : "#122433";
       ctx.lineWidth = 2.5;
       ctx.stroke();
@@ -582,7 +586,10 @@
       if (meNow && typeof meNow.tackleCooldown === "number" && meNow.tackleCooldown > 0) {
         state.tackleReadyAt = performance.now() + meNow.tackleCooldown;
       }
-      drawMinimap(s);
+      if (s !== lastMinimapSnapshot) {
+        drawMinimap(s);
+        lastMinimapSnapshot = s;
+      }
     }
 
     ctx.restore();
