@@ -2,85 +2,114 @@
 :root{--bg:#07111c;--panel:#0d1b2a;--panel2:#102338;--line:#1e3549;--text:#eff7ff;--muted:#91a6ba;--cyan:#39e6d0;--red:#ff4d62;--blue:#448cff;--yellow:#ffca65}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 70% -15%,#17334a 0,transparent 45%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}body{min-height:100dvh}.app-shell{max-width:1440px;margin:auto;padding:0 30px;min-height:100dvh;display:flex;flex-direction:column}.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1b3041}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text);font-weight:800;letter-spacing:.08em;font-size:14px}.brand-mark{display:grid;place-items:center;width:34px;height:34px;background:var(--cyan);color:#06202a;clip-path:polygon(18% 0,100% 0,100% 82%,82% 100%,0 100%,0 18%);font:900 24px 'Barlow Condensed',sans-serif}.brand-accent{color:var(--cyan);margin-left:4px}.connection{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.dot{width:8px;height:8px;border-radius:50%;background:#ffb84a;box-shadow:0 0 12px currentColor}.dot.online{background:var(--cyan)}main{flex:1;padding:46px 0}.screen{animation:fadeIn .25s ease}@keyframes fadeIn{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}.hidden{display:none!important}.menu-screen{display:grid;grid-template-columns:1fr minmax(330px,440px);gap:70px;align-items:center;min-height:570px}.hero-copy{padding:30px 0}.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.22em;margin:0 0 15px}.hero-copy h1{font:900 clamp(46px,6vw,84px)/.91 'Barlow Condensed',sans-serif;letter-spacing:-.02em;margin:0}.hero-copy h1 span{color:var(--cyan)}.subhead{color:var(--muted);max-width:390px;line-height:1.8;font-size:14px;margin-top:25px}.panel{background:linear-gradient(145deg,rgba(17,39,57,.97),rgba(10,25,39,.98));border:1px solid var(--line);border-radius:12px;box-shadow:0 20px 60px #0002}.menu-panel{padding:26px}.menu-panel label{font-size:10px;font-weight:800;letter-spacing:.15em;color:#b9cad9;display:block;margin-bottom:10px}input{width:100%;height:46px;background:#071522;border:1px solid #294157;border-radius:6px;color:var(--text);padding:0 13px;font:inherit;outline:none;margin-bottom:13px}input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #39e6d01c}.btn{min-height:44px;padding:0 17px;border:1px solid transparent;border-radius:6px;font:800 11px Inter,sans-serif;letter-spacing:.07em;cursor:pointer;transition:.15s;white-space:nowrap}.btn:disabled{opacity:.35;cursor:not-allowed}.btn-primary{background:var(--cyan);color:#05242b}.btn-primary:not(:disabled):hover{background:#8affee;transform:translateY(-1px)}.btn-secondary{background:#193b48;color:var(--cyan);border-color:#28616a}.btn-secondary.active{background:#174d45;border-color:var(--cyan)}.btn-ghost{background:transparent;color:#b5c6d5;border-color:#2a4054}.btn-ghost:hover{border-color:#7691a8}.menu-panel>.btn{width:100%}.section-heading{display:flex;align-items:center;justify-content:space-between;margin:28px 0 13px;font-size:10px;font-weight:800;letter-spacing:.14em}.tiny-pill{background:#1a3447;color:#9db2c4;padding:5px 7px;border-radius:4px;font-size:9px}.room-list{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow:auto}.empty-state{padding:18px 10px;text-align:center;border:1px dashed #2a4054;border-radius:6px;color:#8196aa;font-size:12px}.room-row{display:flex;align-items:center;gap:12px;padding:12px;background:#0a1926;border:1px solid #1b3347;border-radius:7px}.room-id{font:700 17px 'Barlow Condensed',sans-serif;letter-spacing:.1em}.room-meta{font-size:10px;color:var(--muted);margin-top:4px}.room-row .btn{margin-left:auto;min-height:35px;padding:0 12px}.microcopy,.hint{color:#7e94a8;font-size:10px;line-height:1.7}.microcopy{margin:15px 0 0}.page-heading,.game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px}.page-heading h2,.game-header h2,.result-panel h2{font:800 40px/.95 'Barlow Condensed',sans-serif;letter-spacing:.03em;margin:0}.muted{color:var(--muted);font-size:12px}.page-heading .muted{margin:10px 0 0}.page-heading strong{color:var(--cyan);letter-spacing:.13em}.lobby-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.team-panel{padding:22px;min-height:230px}.red-panel{border-top:2px solid var(--red)}.blue-panel{border-top:2px solid var(--blue)}.team-title{display:flex;align-items:center;gap:12px;padding-bottom:17px;border-bottom:1px solid var(--line)}.team-title h3{font:800 21px 'Barlow Condensed',sans-serif;margin:0;letter-spacing:.08em}.team-title p{font-size:11px;color:var(--muted);margin:3px 0 0}.team-symbol,.score-dot{display:inline-block;width:12px;height:12px;border-radius:3px}.red-symbol{background:var(--red);box-shadow:0 0 12px #ff4d6240}.blue-symbol{background:var(--blue);box-shadow:0 0 12px #448cff40}.player-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:15px}.player-chip{display:flex;align-items:center;gap:8px;min-width:0;padding:10px;background:#091724;border:1px solid #1c3447;border-radius:5px;font-size:11px}.player-chip .avatar{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:5px;background:#1c3447;font-size:10px;font-weight:800}.player-chip .p-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.player-chip .host-tag{color:var(--yellow);font-size:9px;margin-left:auto}.ready-mark{margin-left:auto;color:var(--cyan)}.lobby-footer{margin-top:18px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px}.ready-info{display:flex;align-items:center;gap:13px}.ready-number{font:800 29px 'Barlow Condensed',sans-serif;color:var(--cyan)}.ready-info strong{font-size:10px;letter-spacing:.1em}.ready-info p{margin:5px 0 0;font-size:10px}.lobby-actions{display:flex;gap:9px}.hint{margin-top:12px}.game-header{gap:20px}.scoreboard{display:flex;align-items:center;gap:22px;background:#0b1b29;border:1px solid #234057;padding:10px 20px;border-radius:8px}.score-team{display:flex;align-items:center;gap:9px;font-size:10px;font-weight:800;letter-spacing:.1em}.score-team b{font:800 28px 'Barlow Condensed',sans-serif}.match-clock{font:800 22px 'Barlow Condensed',sans-serif;color:var(--cyan);padding:0 16px;border-left:1px solid #284054;border-right:1px solid #284054}
 
-/* Cụm Joystick phóng to x2 diện tích (đường kính tăng x1.414 lên 128px) */
+/* JOYSTICK ĐƯỢC PHÓNG TO X2 DIỆN TÍCH */
 .joystick-area{display:flex;align-items:center;gap:15px;color:#6f879a;font-size:9px;font-weight:800;letter-spacing:.15em}
 .joystick{position:relative;width:128px;height:128px;border:2px solid #3d607b;background:rgba(17,40,58,.5);border-radius:50%;touch-action:none;box-shadow:inset 0 0 25px rgba(0,0,0,.45);backdrop-filter:blur(6px)}
 .joystick:after{content:"";position:absolute;inset:22px;border:1.5px dashed rgba(57,230,208,.3);border-radius:50%}
 .joystick-knob{position:absolute;width:52px;height:52px;left:38px;top:38px;border-radius:50%;background:var(--cyan);box-shadow:0 0 22px rgba(57,230,208,.65);z-index:2;pointer-events:none}
 
-/* Nút bấm hành động cơ bản */
-.control-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #2b465b;background:rgba(16,37,56,.85);color:#dceaf5;border-radius:50%;touch-action:none;user-select:none;backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+/* THIẾT KẾ NÚT BẤM */
+.control-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #2b465b;background:rgba(16,37,56,.85);color:#dceaf5;border-radius:50% !important;touch-action:none;user-select:none;backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .control-btn small{font:800 8px Inter,sans-serif;letter-spacing:.04em;pointer-events:none}
 .control-btn.pressed{transform:scale(.92)!important;border-color:var(--cyan)!important;background:rgba(23,68,63,.92)!important}
 .sprint-btn{color:var(--yellow);border-color:rgba(255,202,101,.65);background:rgba(40,39,35,.85);box-shadow:0 0 20px rgba(255,202,101,.18)}
 .kick-btn{color:var(--cyan);border-color:rgba(57,230,208,.55)}
 .tackle-btn{color:#ff9aab;border-color:rgba(255,77,98,.55)}
 
-/* CỤM NÚT QUỸ ĐẠO: Nút tăng tốc ở tâm, 3 nút đỡ/sút/xoạc nằm trên đường tròn cách đều */
+/* CỤM NÚT QUỸ ĐẠO: TĂNG TỐC Ở TÂM, 3 NÚT NẰM TRÊN ĐƯỜNG TRÒN CÁCH ĐỀU */
 .control-buttons-cluster{
   position:relative;
   width:210px;
   height:210px;
   touch-action:none;
 }
-/* Tâm nút sprintBtn đặt ở (150px, 150px) trong cụm 210x210px */
+
+/* Vòng tròn bao quanh nút Tăng Tốc (bán kính R = 94px từ tâm nút sprint) */
+.orbit-ring{
+  position:absolute !important;
+  right: -36px !important;
+  bottom: -36px !important;
+  width:188px !important;
+  height:188px !important;
+  border-radius:50% !important;
+  border:1.5px dashed rgba(57,230,208,.35) !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+}
+
+/* 1. NÚT TĂNG TỐC (Ở tâm của đường tròn) */
+#gameScreen #sprintBtn,
 .center-sprint-btn{
-  position:absolute;
-  right:16px;
-  bottom:16px;
-  width:84px;
-  height:84px;
-  border-radius:50%;
-  font-size:26px;
-  z-index:5;
+  position:absolute !important;
+  right:16px !important;
+  bottom:16px !important;
+  top:auto !important;
+  left:auto !important;
+  width:84px !important;
+  height:84px !important;
+  border-radius:50% !important;
+  font-size:26px !important;
+  z-index:5 !important;
+  margin:0 !important;
 }
 .center-sprint-btn small{font-size:9px;margin-top:2px}
 
-/* Vòng tròn quỹ đạo cách đều xung quanh nút sprint (bán kính R = 90px từ tâm sprint) */
-.orbit-ring{
-  position:absolute;
-  right: -32px;
-  bottom: -32px;
-  width:180px;
-  height:180px;
-  border-radius:50%;
-  border:1.5px dashed rgba(57,230,208,.32);
-  pointer-events:none;
-  z-index:1;
-}
-
-/* 3 nút vệ tinh tròn đều 56px, đặt chính xác trên đường tròn tâm sprint */
-.satellite-btn{
-  position:absolute;
-  width:56px;
-  height:56px;
-  font-size:18px;
-  z-index:6;
-}
-/* 1. Nút ĐỠ BÓNG: góc 180° (sang trái nút sprint, offset dx = -90px) */
+/* 2. NÚT ĐỠ BÓNG: Nằm trên đường tròn bên trái (góc 180°) */
+#gameScreen #controlBtn,
 .control-btn-control{
-  right: 124px;
-  bottom: 30px;
-}
-/* 2. Nút SÚT: góc 135° (chếch trái-trên, offset dx = -64px, dy = -64px) */
-.control-btn-kick{
-  right: 98px;
-  bottom: 94px;
-}
-/* 3. Nút XOẠC: góc 90° (thẳng lên trên nút sprint, offset dy = -90px) */
-.control-btn-tackle{
-  right: 30px;
-  bottom: 124px;
+  position:absolute !important;
+  right:124px !important;
+  bottom:30px !important;
+  top:auto !important;
+  left:auto !important;
+  width:56px !important;
+  height:56px !important;
+  border-radius:50% !important;
+  font-size:18px !important;
+  z-index:6 !important;
+  margin:0 !important;
 }
 
-/* Thanh gồng lực sút */
-.kick-btn{position:relative;overflow:hidden}
+/* 3. NÚT SÚT: Nằm chính giữa trên đường tròn (góc 135°, cách đều Đỡ bóng và Xoạc) */
+#gameScreen #kickBtn,
+.control-btn-kick{
+  position:absolute !important;
+  right:96px !important;
+  bottom:96px !important;
+  top:auto !important;
+  left:auto !important;
+  width:56px !important;
+  height:56px !important;
+  border-radius:50% !important;
+  font-size:18px !important;
+  z-index:6 !important;
+  margin:0 !important;
+  padding-bottom:0 !important;
+}
+
+/* 4. NÚT XOẠC: Nằm trên đường tròn phía trên (góc 90°) */
+#gameScreen #tackleBtn,
+.control-btn-tackle{
+  position:absolute !important;
+  right:30px !important;
+  bottom:124px !important;
+  top:auto !important;
+  left:auto !important;
+  width:56px !important;
+  height:56px !important;
+  border-radius:50% !important;
+  font-size:18px !important;
+  z-index:6 !important;
+  margin:0 !important;
+}
+
+/* Thanh lực sút trong nút SÚT */
 .kick-charge-track{position:absolute;left:18%;right:18%;bottom:6px;height:3px;border-radius:3px;background:rgba(220,240,250,.25);overflow:hidden}
 #kickChargeFill{display:block;width:0%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#39e6d0,#ffca65,#ff4d62);transition:width .04s linear}
 
 .result-panel{max-width:720px;margin:30px auto;padding:35px}.result-panel h2{font-size:clamp(30px,5vw,46px)}.final-score{display:flex;align-items:center;justify-content:center;gap:35px;padding:30px 0}.final-score>div{display:flex;flex-direction:column;align-items:center;gap:7px}.final-score strong{font:900 70px 'Barlow Condensed',sans-serif}.team-label{font-size:10px;font-weight:800;letter-spacing:.15em}.red-text{color:var(--red)}.blue-text{color:var(--blue)}.score-dash{font-size:35px;color:#526a7f}.stats-list{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat-row{display:flex;justify-content:space-between;gap:8px;padding:10px;background:#091724;border-radius:5px;font-size:11px}.result-actions{display:flex;gap:10px;margin-top:20px}.result-actions .btn{flex:1}.toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);z-index:99999;background:#f5c96a;color:#2a2007;padding:12px 18px;border-radius:7px;box-shadow:0 8px 25px rgba(0,0,0,.4);font-size:12px;font-weight:700;max-width:90vw;text-align:center}footer{display:flex;justify-content:space-between;gap:15px;border-top:1px solid #1b3041;padding:18px 0;color:#7890a4;font-size:9px;font-weight:700;letter-spacing:.08em}.muted{color:var(--muted)}
 
-/* MÀN HÌNH TRẬN ĐẤU (DESKTOP) */
+/* MÀN HÌNH TRẬN ĐẤU */
 #gameScreen{position:relative}
 .field-wrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border:1px solid #2a4d55;border-radius:8px;background:#074837;box-shadow:0 16px 45px rgba(0,0,0,.35)}
 #gameCanvas{display:block;width:100%;height:100%;touch-action:none}
@@ -90,9 +119,7 @@
 .countdown-overlay small{margin-top:25px;font-size:10px;font-weight:800;letter-spacing:.25em}
 .game-controls{display:flex;align-items:center;justify-content:space-between;padding:18px 8px 0;gap:20px}
 
-/* ========================================================= */
 /* MOBILE XOAY NGANG 90 ĐỘ KHI ĐIỆN THOẠI ĐANG Ở CHẾ ĐỘ DỌC */
-/* ========================================================= */
 @media (max-width: 768px) and (orientation: portrait) {
   body:has(#gameScreen:not(.hidden)) {
     overflow:hidden !important;
@@ -125,7 +152,6 @@
     transform:translateX(100vw) rotate(90deg) !important;
   }
 
-  /* Sân bóng tràn toàn bộ viewport xoay (Layer z-index: 1) */
   #gameScreen:not(.hidden) .field-wrap {
     position:absolute !important;
     inset:0 !important;
@@ -144,7 +170,6 @@
     touch-action:none !important;
   }
 
-  /* Bảng điểm trên cùng sân (Layer z-index: 25) */
   #gameScreen:not(.hidden) .game-header {
     position:absolute !important;
     top:max(8px, env(safe-area-inset-top)) !important;
@@ -166,7 +191,6 @@
     border-radius:10px !important;
   }
 
-  /* Minimap ở góc trên bên phải */
   #gameScreen:not(.hidden) #minimapCanvas {
     position:absolute !important;
     top:max(10px, env(safe-area-inset-top)) !important;
@@ -177,7 +201,6 @@
     z-index:26 !important;
   }
 
-  /* LAYER ĐIỀU KHIỂN (Layer z-index: 30 - Nổi hoàn toàn trên sân cỏ) */
   #gameScreen:not(.hidden) .game-controls {
     position:absolute !important;
     inset:0 !important;
@@ -188,7 +211,6 @@
     pointer-events:none !important;
   }
 
-  /* Nút Joystick góc dưới bên trái */
   #gameScreen:not(.hidden) .joystick-area {
     position:absolute !important;
     left:max(18px, env(safe-area-inset-left)) !important;
@@ -203,14 +225,7 @@
     pointer-events:auto !important;
     touch-action:none !important;
   }
-  #gameScreen:not(.hidden) .joystick-knob {
-    width:42% !important;
-    height:42% !important;
-    left:29% !important;
-    top:29% !important;
-  }
 
-  /* Cụm nút thao tác góc dưới bên phải */
   #gameScreen:not(.hidden) .control-buttons-cluster {
     position:absolute !important;
     right:max(16px, env(safe-area-inset-right)) !important;
@@ -219,7 +234,7 @@
   }
 }
 
-/* Native Landscape Mode (Khi người dùng tự xoay ngang điện thoại) */
+/* NATIVE LANDSCAPE (Khi người dùng tự cầm điện thoại nằm ngang) */
 @media (max-width: 950px) and (orientation: landscape) {
   body:has(#gameScreen:not(.hidden)) { overflow:hidden; }
   body:has(#gameScreen:not(.hidden)) .topbar,
