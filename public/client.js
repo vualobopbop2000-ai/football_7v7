@@ -17,10 +17,6 @@
     clearTimeout(state.toastTimer); state.toastTimer = setTimeout(() => el.classList.add("hidden"), 3200);
   }
 
-  function showOrientationNotice() {
-    const notice = $("orientationNotice");
-    if (notice) notice.classList.remove("hidden");
-  }
   function hideOrientationNotice() {
     const notice = $("orientationNotice");
     if (notice) notice.classList.add("hidden");
@@ -130,7 +126,6 @@
         $("gameEyebrow").textContent = state.practice ? "FREE TRAINING / SOLO" : "LIVE MATCH / 60 TICK";
         $("gameTitle").textContent = state.practice ? "LUYỆN TẬP" : "SÂN ĐẤU";
         showScreen("gameScreen");
-        showOrientationNotice();
         break;
       case "snapshot":
         state.snapshot = msg;
@@ -433,24 +428,14 @@
   const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d", { alpha: true, desynchronized: true }) : null;
   let canvasCssWidth = 0, canvasCssHeight = 0, canvasDpr = 1;
   let lastMinimapSnapshot = null;
-  // Ưu tiên chế độ nhẹ trên điện thoại/máy có ít tài nguyên; không thay đổi kích thước CSS.
-  const hardwareThreads = Number(navigator.hardwareConcurrency || 8);
-  const deviceMemory = Number(navigator.deviceMemory || 8);
-  const isMobileViewport = window.matchMedia("(max-width: 768px)").matches;
-  const isLowPowerDevice = isMobileViewport || hardwareThreads <= 4 || deviceMemory <= 4;
-  const targetRenderInterval = isLowPowerDevice ? (1000 / 30) : 0;
-  let lastDrawAt = 0;
-  if (isLowPowerDevice) document.documentElement.classList.add("low-graphics");
-
+  const isLowPowerDevice = window.matchMedia("(max-width: 768px)").matches;
   function resizeGameCanvas() {
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     canvasCssWidth = rect.width;
     canvasCssHeight = rect.height;
-    // Hạ số pixel canvas nội bộ; kích thước hiển thị, sân và nút điều khiển giữ nguyên.
-    // Điện thoại/máy yếu dùng 0.85x; máy còn lại tối đa 1.25x thay vì render quá nhiều pixel.
-    const maxDpr = isLowPowerDevice ? 0.85 : 1.25;
-    canvasDpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+    // Lower backing resolution on phones reduces fill-rate/GPU cost and improves FPS.
+    canvasDpr = Math.min(window.devicePixelRatio || 1, isLowPowerDevice ? 1.25 : 1.5);
     const dw = Math.max(1, Math.round(canvasCssWidth * canvasDpr));
     const dh = Math.max(1, Math.round(canvasCssHeight * canvasDpr));
     if (canvas.width !== dw || canvas.height !== dh) {
@@ -494,13 +479,7 @@
     }
   }
 
-  function draw(timestamp = 0) {
-    // Snapshot từ server chỉ cập nhật 30 lần/giây; trên máy yếu tránh vẽ lại dư ở 60 FPS.
-    if (targetRenderInterval && timestamp - lastDrawAt < targetRenderInterval) {
-      requestAnimationFrame(draw);
-      return;
-    }
-    lastDrawAt = timestamp;
+  function draw() {
     const s = state.snapshot;
     const vw = canvas.width, vh = canvas.height;
     ctx.clearRect(0, 0, vw, vh);
@@ -526,7 +505,7 @@
     ctx.fillRect(0, 0, fw, fh);
 
     // Sọc cỏ
-    const stripe = isLowPowerDevice ? 120 : 90;
+    const stripe = 90;
     for (let x = 0; x < fw; x += stripe * 2) {
       ctx.fillStyle = "#ffffff09";
       ctx.fillRect(x, 0, stripe, fh);

@@ -16,4 +16,8 @@ Cấu trúc dự án:
 
 Cách dùng: thay các file theo đúng đường dẫn trong dự án hiện tại bằng các file tương ứng trong gói này. Giữ public/client.js, public/index.html và public/style.css nằm trong thư mục public. Sau đó khởi động/deploy lại dịch vụ Node.js như trước.
 
-5. Tối ưu đồ họa cho thiết bị yếu: tự nhận biết thiết bị di động/máy có ít tài nguyên, hạ độ phân giải nội bộ của canvas, giới hạn nhịp vẽ theo tốc độ snapshot máy chủ và tắt blur/đổ bóng nặng. Không thay đổi bố cục, kích thước CSS hoặc vị trí nút điều khiển.
+
+CAP NHAT THONG BAO XOAY MAN HINH
+- Bang huong dan xoay ngang xuat hien ngay khi mo trang game (truoc khi vao tran).
+- Nguoi choi co the dong bang thong bao; thong bao khong tu hien lai khi tran bat dau.
+- Giu nguyen giao dien goc, khong ap dung toi uu do hoa nhe.
