@@ -2,20 +2,12 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07111c">
   <title>NEON FOOTBALL — 2D Arena</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div id="orientationModal" class="orientation-modal" role="dialog" aria-modal="true" aria-labelledby="orientationTitle">
-    <div class="orientation-card">
-      <div class="orientation-icon" aria-hidden="true">↻</div>
-      <h2 id="orientationTitle">HÃY MỞ KHÓA QUAY MÀN HÌNH TRƯỚC KHI CHƠI VÀ QUAY NGANG ĐIỆN THOẠI.</h2>
-      <p class="orientation-credit">cre: Ng Duc Minh</p>
-      <button id="orientationCloseBtn" class="btn btn-primary orientation-close" type="button">ĐÃ HIỂU, ĐÓNG THÔNG BÁO</button>
-    </div>
-  </div>
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Neon Football"><span class="brand-mark">N</span><span>NEON<span class="brand-accent">FOOTBALL</span></span></a>
@@ -32,7 +24,6 @@
         <div class="panel menu-panel">
           <label for="playerName">TÊN NGƯỜI CHƠI</label>
           <input id="playerName" maxlength="18" placeholder="Guest_1234" autocomplete="nickname">
-          <button id="practiceBtn" class="btn btn-practice" type="button">⚽ LUYỆN TẬP MỘT MÌNH</button>
           <button id="createRoomBtn" class="btn btn-primary">＋ TẠO PHÒNG MỚI</button>
           <div class="section-heading"><span>PHÒNG ĐANG MỞ</span><span id="roomCount" class="tiny-pill">0 PHÒNG</span></div>
           <div id="roomList" class="room-list"><div class="empty-state">Đang tải danh sách phòng…</div></div>
@@ -57,12 +48,58 @@
       </section>
 
       <section id="gameScreen" class="screen hidden">
-        <div class="game-header"><div><p class="eyebrow">LIVE MATCH / 60 TICK</p><h2>SÂN ĐẤU</h2></div><div class="scoreboard"><div class="score-team"><span class="score-dot red-symbol"></span><span>ĐỎ</span><b id="redScore">0</b></div><div class="match-clock" id="matchClock">05:00</div><div class="score-team"><b id="blueScore">0</b><span>XANH</span><span class="score-dot blue-symbol"></span></div></div></div>
-        <button id="exitPracticeBtn" class="btn btn-ghost exit-practice hidden" type="button">← THOÁT LUYỆN TẬP</button>
-        <div class="field-wrap"><canvas id="gameCanvas" width="1280" height="720" aria-label="Sân bóng 2D"></canvas><canvas id="minimapCanvas" width="180" height="105" aria-label="Bản đồ nhỏ"></canvas><div id="countdownOverlay" class="countdown-overlay hidden"><span id="countdownNumber">3</span><small>TRẬN ĐẤU BẮT ĐẦU</small></div></div>
+        <div class="game-header">
+          <div><p class="eyebrow">LIVE MATCH / 60 TICK</p><h2>SÂN ĐẤU</h2></div>
+          <div class="scoreboard">
+            <div class="score-team"><span class="score-dot red-symbol"></span><span>ĐỎ</span><b id="redScore">0</b></div>
+            <div class="match-clock" id="matchClock">05:00</div>
+            <div class="score-team"><b id="blueScore">0</b><span>XANH</span><span class="score-dot blue-symbol"></span></div>
+          </div>
+        </div>
+
+        <div class="field-wrap">
+          <canvas id="gameCanvas" aria-label="Sân bóng 2D"></canvas>
+          <canvas id="minimapCanvas" width="180" height="105" aria-label="Bản đồ nhỏ"></canvas>
+          <div id="countdownOverlay" class="countdown-overlay hidden"><span id="countdownNumber">3</span><small>TRẬN ĐẤU BẮT ĐẦU</small></div>
+        </div>
+
         <div class="game-controls">
-          <div class="joystick-area"><div id="joystick" class="joystick"><div id="joystickKnob" class="joystick-knob"></div></div><span>DI CHUYỂN</span></div>
-          <div class="control-buttons"><button id="sprintBtn" class="control-btn sprint-btn">⚡<small>TĂNG TỐC</small></button><button id="controlBtn" class="control-btn">◉<small>ĐỠ BÓNG</small></button><button id="kickBtn" class="control-btn kick-btn" aria-label="Giữ để gồng lực sút hoặc chuyền">➤<small>SÚT</small><span class="kick-charge-track" role="progressbar" aria-label="Lực sút" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="kickChargeFill"></span></span></button><button id="tackleBtn" class="control-btn tackle-btn">↘<small>XOẠC BÓNG</small></button></div>
+          <div class="joystick-area">
+            <div id="joystick" class="joystick">
+              <div id="joystickKnob" class="joystick-knob"></div>
+            </div>
+            <span>DI CHUYỂN</span>
+          </div>
+
+          <!-- Cụm nút thao tác xoay quanh nút Tăng Tốc -->
+          <div class="control-buttons-cluster">
+            <div class="orbit-ring" aria-hidden="true"></div>
+
+            <!-- 3 nút vệ tinh cách đều nhau trên vòng tròn -->
+            <button id="controlBtn" class="control-btn satellite-btn control-btn-control" aria-label="Đỡ bóng">
+              <span class="btn-icon">◉</span>
+              <small>ĐỠ BÓNG</small>
+            </button>
+
+            <button id="kickBtn" class="control-btn kick-btn satellite-btn control-btn-kick" aria-label="Giữ để gồng lực sút">
+              <span class="btn-icon">➤</span>
+              <small>SÚT</small>
+              <span class="kick-charge-track" role="progressbar" aria-label="Lực sút" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span id="kickChargeFill"></span>
+              </span>
+            </button>
+
+            <button id="tackleBtn" class="control-btn tackle-btn satellite-btn control-btn-tackle" aria-label="Xoạc bóng">
+              <span class="btn-icon">↘</span>
+              <small>XOẠC</small>
+            </button>
+
+            <!-- Nút Tăng tốc ở tâm -->
+            <button id="sprintBtn" class="control-btn sprint-btn center-sprint-btn" aria-label="Tăng tốc">
+              <span class="btn-icon">⚡</span>
+              <small>TĂNG TỐC</small>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -71,7 +108,7 @@
       </section>
     </main>
     <div id="toast" class="toast hidden" role="status"></div>
-    <footer><span>NEON FOOTBALL <span class="muted">/ STARTER BUILD 0.1</span></span><span>AUTHORITATIVE SERVER · WEBSOCKET</span></footer>
+    <footer><span>NEON FOOTBALL <span class="muted">/ ARENA</span></span><span>AUTHORITATIVE SERVER · WEBSOCKET</span></footer>
   </div>
   <script src="/client.js"></script>
 </body>
