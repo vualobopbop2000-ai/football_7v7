@@ -25,6 +25,7 @@
           <label for="playerName">TÊN NGƯỜI CHƠI</label>
           <input id="playerName" maxlength="18" placeholder="Guest_1234" autocomplete="nickname">
           <button id="createRoomBtn" class="btn btn-primary">＋ TẠO PHÒNG MỚI</button>
+          <button id="practiceBtn" class="btn btn-secondary practice-menu-btn">⚽ VÀO TRẬN LUYỆN TẬP</button>
           <div class="section-heading"><span>PHÒNG ĐANG MỞ</span><span id="roomCount" class="tiny-pill">0 PHÒNG</span></div>
           <div id="roomList" class="room-list"><div class="empty-state">Đang tải danh sách phòng…</div></div>
           <p class="microcopy">Tối đa 14 người/phòng · Cần hai đội cân bằng để bắt đầu</p>
@@ -49,12 +50,14 @@
 
       <section id="gameScreen" class="screen hidden">
         <div class="game-header">
-          <div><p class="eyebrow">LIVE MATCH / 60 TICK</p><h2>SÂN ĐẤU</h2></div>
+          <div><p id="gameEyebrow" class="eyebrow">LIVE MATCH / 60 TICK</p><h2 id="gameTitle">SÂN ĐẤU</h2></div>
           <div class="scoreboard">
             <div class="score-team"><span class="score-dot red-symbol"></span><span>ĐỎ</span><b id="redScore">0</b></div>
             <div class="match-clock" id="matchClock">05:00</div>
             <div class="score-team"><b id="blueScore">0</b><span>XANH</span><span class="score-dot blue-symbol"></span></div>
+            <span id="practiceIndicator" class="hidden">LUYỆN TẬP · KHÔNG GIỚI HẠN</span>
           </div>
+          <button id="exitPracticeBtn" class="btn btn-ghost hidden" type="button">✕ THOÁT LUYỆN TẬP</button>
         </div>
 
         <div class="field-wrap">
@@ -109,6 +112,14 @@
     </main>
     <div id="toast" class="toast hidden" role="status"></div>
     <footer><span>NEON FOOTBALL <span class="muted">/ ARENA</span></span><span>AUTHORITATIVE SERVER · WEBSOCKET</span></footer>
+  </div>
+  <div id="orientationNotice" class="orientation-modal hidden" role="dialog" aria-modal="true" aria-labelledby="orientationNoticeTitle">
+    <div class="orientation-card">
+      <div class="orientation-icon" aria-hidden="true">↻</div>
+      <h2 id="orientationNoticeTitle">HÃY MỞ KHÓA QUAY MÀN HÌNH TRƯỚC KHI CHƠI VÀ QUAY NGANG ĐIỆN THOẠI.</h2>
+      <p class="orientation-credit">cre: Ng Duc Minh</p>
+      <button id="closeOrientationNotice" class="btn btn-primary" type="button">ĐÃ HIỂU — ĐÓNG THÔNG BÁO</button>
+    </div>
   </div>
   <script src="/client.js"></script>
 </body>

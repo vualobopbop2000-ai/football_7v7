@@ -267,3 +267,69 @@
   #gameScreen .joystick { width:124px; height:124px; pointer-events:auto; }
   #gameScreen .control-buttons-cluster { position:absolute; right:16px; bottom:14px; pointer-events:auto; }
 }
+/* Nút vào chế độ luyện tập */
+.practice-menu-btn{width:100%;margin-top:10px;background:#102b3b;border-color:#2e5964;color:#c8fff4}
+.practice-menu-btn:hover{background:#174657;border-color:var(--cyan)}
+
+/* Thông báo xoay ngang trước khi chơi */
+.orientation-modal{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,9,16,.86);backdrop-filter:blur(10px)}
+.orientation-modal.hidden{display:none!important}
+.orientation-card{width:min(560px,100%);padding:clamp(24px,5vw,42px);text-align:center;background:linear-gradient(150deg,#112a3d,#091824);border:1px solid #35576b;border-radius:16px;box-shadow:0 28px 100px rgba(0,0,0,.55)}
+.orientation-icon{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 20px;border-radius:50%;border:1px solid rgba(57,230,208,.5);background:rgba(57,230,208,.1);color:var(--cyan);font-size:38px;font-weight:700}
+.orientation-card h2{margin:0;color:#eff7ff;font:900 clamp(24px,5vw,36px)/1.12 'Barlow Condensed',sans-serif;letter-spacing:.035em}
+.orientation-credit{margin:12px 0 24px;color:var(--cyan);font-size:13px;font-weight:700;letter-spacing:.04em}
+.orientation-card .btn{min-height:46px;max-width:100%;white-space:normal;line-height:1.35}
+
+/* Trạng thái luyện tập: không hiển thị tỉ số của một trận đấu chính thức */
+#gameScreen .game-header{position:relative}
+#exitPracticeBtn{position:absolute;top:0;left:0;z-index:35;min-height:34px;padding:0 11px;font-size:9px;pointer-events:auto}
+#practiceIndicator{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
+#practiceIndicator.hidden{display:none!important}
+#gameScreen.practice-mode .score-team,
+#gameScreen.practice-mode .match-clock{display:none!important}
+#gameScreen.practice-mode #practiceIndicator:not(.hidden){display:block!important}
+
+@media (max-width:768px){
+  .menu-screen{grid-template-columns:minmax(0,1fr);gap:20px;min-height:auto}
+  .hero-copy{padding:8px 0}
+  main{padding:24px 0}
+  .orientation-card{padding:25px 20px}
+  #exitPracticeBtn{top:8px;left:10px}
+}
+
+/* CHẾ ĐỘ ĐỒ HỌA NHẸ TỰ ĐỘNG: chỉ giảm hiệu ứng vẽ, không đổi layout/vị trí/kích thước. */
+html.low-graphics body {
+  background: var(--bg);
+}
+html.low-graphics .panel,
+html.low-graphics .field-wrap,
+html.low-graphics .toast,
+html.low-graphics .joystick,
+html.low-graphics .joystick-knob,
+html.low-graphics .control-btn,
+html.low-graphics .orientation-card {
+  box-shadow: none !important;
+}
+html.low-graphics .panel {
+  background: var(--panel);
+}
+html.low-graphics .joystick,
+html.low-graphics .control-btn,
+html.low-graphics .countdown-overlay,
+html.low-graphics .orientation-modal {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.low-graphics .orientation-modal {
+  background: rgba(2, 9, 16, .92);
+}
+html.low-graphics .countdown-overlay span {
+  text-shadow: none !important;
+}
+html.low-graphics .red-symbol,
+html.low-graphics .blue-symbol,
+html.low-graphics .dot,
+html.low-graphics .sprint-btn {
+  box-shadow: none !important;
+}
+

@@ -2,7 +2,7 @@
   const $ = id => document.getElementById(id);
   const screens = ["menuScreen", "lobbyScreen", "gameScreen", "resultScreen"];
   const state = {
-    ws: null, connected: false, id: null, name: "", room: null, rooms: [],
+    ws: null, connected: false, id: null, name: "", room: null, rooms: [], practice: false,
     ready: false, isHost: false,
     field: { width: 2400, height: 1400, goalHeight: 190, margin: 50 },
     snapshot: null, countdown: null, kickHeld: false, kickStart: 0, kickChargeFrame: 0,
@@ -16,6 +16,22 @@
     const el = $("toast"); el.textContent = message; el.classList.remove("hidden");
     clearTimeout(state.toastTimer); state.toastTimer = setTimeout(() => el.classList.add("hidden"), 3200);
   }
+
+  function showOrientationNotice() {
+    const notice = $("orientationNotice");
+    if (notice) notice.classList.remove("hidden");
+  }
+  function hideOrientationNotice() {
+    const notice = $("orientationNotice");
+    if (notice) notice.classList.add("hidden");
+  }
+  $("closeOrientationNotice").addEventListener("click", hideOrientationNotice);
+  $("orientationNotice").addEventListener("click", e => {
+    if (e.target === $("orientationNotice")) hideOrientationNotice();
+  });
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape") hideOrientationNotice();
+  });
 
   function send(type, extra = {}) {
     const payload = JSON.stringify({ type, ...extra });
@@ -81,10 +97,11 @@
       case "joined": state.roomId = msg.roomId; break;
       case "roomUpdate":
         state.room = msg.room;
+        state.practice = Boolean(state.room.practice);
         state.ready = !!state.room.players.find(p => p.id === state.id)?.ready;
         state.isHost = state.room.hostId === state.id;
         renderLobby();
-        if (state.room.status === "waiting" || state.room.status === "countdown") showScreen("lobbyScreen");
+        if (!state.practice && (state.room.status === "waiting" || state.room.status === "countdown")) showScreen("lobbyScreen");
         if (state.room.status === "finished") showScreen("resultScreen");
         break;
       case "countdown":
@@ -104,9 +121,16 @@
         break;
       case "matchStarted":
         if (msg.field) state.field = msg.field;
+        state.practice = Boolean(msg.practice);
         state.snapshot = null;
         $("countdownOverlay").classList.add("hidden");
+        $("gameScreen").classList.toggle("practice-mode", state.practice);
+        $("exitPracticeBtn").classList.toggle("hidden", !state.practice);
+        $("practiceIndicator").classList.toggle("hidden", !state.practice);
+        $("gameEyebrow").textContent = state.practice ? "FREE TRAINING / SOLO" : "LIVE MATCH / 60 TICK";
+        $("gameTitle").textContent = state.practice ? "LUYỆN TẬP" : "SÂN ĐẤU";
         showScreen("gameScreen");
+        showOrientationNotice();
         break;
       case "snapshot":
         state.snapshot = msg;
@@ -128,7 +152,15 @@
       case "notice": toast(msg.message); break;
       case "error": toast(msg.message); break;
       case "leftRoom":
-        state.room = null; state.ready = false; state.isHost = false; showScreen("menuScreen"); break;
+        state.room = null; state.ready = false; state.isHost = false; state.practice = false;
+        $("gameScreen").classList.remove("practice-mode");
+        $("exitPracticeBtn").classList.add("hidden");
+        $("practiceIndicator").classList.add("hidden");
+        $("gameEyebrow").textContent = "LIVE MATCH / 60 TICK";
+        $("gameTitle").textContent = "SÂN ĐẤU";
+        resetJoystick();
+        state.input.sprint = state.input.control = state.input.tackle = false;
+        showScreen("menuScreen"); break;
     }
   }
 
@@ -179,6 +211,10 @@
 
   function updateHud(s) {
     $("redScore").textContent = s.score.red; $("blueScore").textContent = s.score.blue;
+    if (state.practice) {
+      $("matchClock").textContent = "∞";
+      return;
+    }
     const sec = Math.ceil(s.remaining); $("matchClock").textContent = `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
   }
 
@@ -194,6 +230,13 @@
 
   $("createRoomBtn").addEventListener("click", () => {
     send("setName", { name: $("playerName").value.trim() }); send("createRoom");
+  });
+  $("practiceBtn").addEventListener("click", () => {
+    send("setName", { name: $("playerName").value.trim() });
+    send("startPractice");
+  });
+  $("exitPracticeBtn").addEventListener("click", () => {
+    if (state.practice) send("leaveRoom");
   });
   $("playerName").addEventListener("change", () => send("setName", { name: $("playerName").value.trim() }));
   $("leaveRoomBtn").addEventListener("click", () => send("leaveRoom"));
@@ -390,14 +433,24 @@
   const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d", { alpha: true, desynchronized: true }) : null;
   let canvasCssWidth = 0, canvasCssHeight = 0, canvasDpr = 1;
   let lastMinimapSnapshot = null;
-  const isLowPowerDevice = window.matchMedia("(max-width: 768px)").matches;
+  // Ưu tiên chế độ nhẹ trên điện thoại/máy có ít tài nguyên; không thay đổi kích thước CSS.
+  const hardwareThreads = Number(navigator.hardwareConcurrency || 8);
+  const deviceMemory = Number(navigator.deviceMemory || 8);
+  const isMobileViewport = window.matchMedia("(max-width: 768px)").matches;
+  const isLowPowerDevice = isMobileViewport || hardwareThreads <= 4 || deviceMemory <= 4;
+  const targetRenderInterval = isLowPowerDevice ? (1000 / 30) : 0;
+  let lastDrawAt = 0;
+  if (isLowPowerDevice) document.documentElement.classList.add("low-graphics");
+
   function resizeGameCanvas() {
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     canvasCssWidth = rect.width;
     canvasCssHeight = rect.height;
-    // Lower backing resolution on phones reduces fill-rate/GPU cost and improves FPS.
-    canvasDpr = Math.min(window.devicePixelRatio || 1, isLowPowerDevice ? 1.25 : 1.5);
+    // Hạ số pixel canvas nội bộ; kích thước hiển thị, sân và nút điều khiển giữ nguyên.
+    // Điện thoại/máy yếu dùng 0.85x; máy còn lại tối đa 1.25x thay vì render quá nhiều pixel.
+    const maxDpr = isLowPowerDevice ? 0.85 : 1.25;
+    canvasDpr = Math.min(window.devicePixelRatio || 1, maxDpr);
     const dw = Math.max(1, Math.round(canvasCssWidth * canvasDpr));
     const dh = Math.max(1, Math.round(canvasCssHeight * canvasDpr));
     if (canvas.width !== dw || canvas.height !== dh) {
@@ -441,7 +494,13 @@
     }
   }
 
-  function draw() {
+  function draw(timestamp = 0) {
+    // Snapshot từ server chỉ cập nhật 30 lần/giây; trên máy yếu tránh vẽ lại dư ở 60 FPS.
+    if (targetRenderInterval && timestamp - lastDrawAt < targetRenderInterval) {
+      requestAnimationFrame(draw);
+      return;
+    }
+    lastDrawAt = timestamp;
     const s = state.snapshot;
     const vw = canvas.width, vh = canvas.height;
     ctx.clearRect(0, 0, vw, vh);
@@ -467,7 +526,7 @@
     ctx.fillRect(0, 0, fw, fh);
 
     // Sọc cỏ
-    const stripe = 90;
+    const stripe = isLowPowerDevice ? 120 : 90;
     for (let x = 0; x < fw; x += stripe * 2) {
       ctx.fillStyle = "#ffffff09";
       ctx.fillRect(x, 0, stripe, fh);

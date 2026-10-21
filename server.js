@@ -28,7 +28,7 @@ const send = (ws, data) => {
 };
 function publicRoom(room) {
   return {
-    id: room.id, hostId: room.hostId, status: room.status,
+    id: room.id, hostId: room.hostId, status: room.status, practice: Boolean(room.practice),
     players: [...room.players.values()].map(p => ({
       id: p.id, name: p.name, team: p.team, ready: p.ready, isHost: p.id === room.hostId
     }))
@@ -39,7 +39,7 @@ function broadcastRoom(room) {
   for (const p of room.players.values()) send(p.ws, payload);
 }
 function lobbyList() {
-  return [...rooms.values()].filter(r => r.status !== "finished").map(r => ({
+  return [...rooms.values()].filter(r => !r.practice && r.status !== "finished").map(r => ({
     id: r.id, status: r.status, count: r.players.size,
     red: [...r.players.values()].filter(p => p.team === "red").length,
     blue: [...r.players.values()].filter(p => p.team === "blue").length
@@ -65,7 +65,7 @@ function assignTeam(room) {
 function createRoom(host) {
   const id = uid();
   const room = {
-    id, hostId: host.id, players: new Map(), status: "waiting",
+    id, hostId: host.id, players: new Map(), status: "waiting", practice: false,
     nextTeam: "red", countdownEnds: 0, countdownTimer: null,
     goalCountdownTimer: null, isGoalPausing: false,
     state: null, loop: null, lastTick: Date.now(), startedAt: 0,
@@ -75,6 +75,20 @@ function createRoom(host) {
   joinRoom(host, room, true);
   return room;
 }
+function createPracticeRoom(client) {
+  if (client.roomId) leaveRoom(client, false);
+  const room = {
+    id: `TRAIN-${uid()}`, hostId: client.id, players: new Map(), status: "waiting", practice: true,
+    nextTeam: "red", countdownEnds: 0, countdownTimer: null,
+    goalCountdownTimer: null, isGoalPausing: false,
+    state: null, loop: null, lastTick: Date.now(), startedAt: 0, lastSnapshotAt: 0
+  };
+  rooms.set(room.id, room);
+  joinRoom(client, room, true);
+  startMatch(room);
+  broadcastRooms();
+}
+
 function joinRoom(client, room, isHost = false) {
   if (room.status !== "waiting") return send(client.ws, { type: "error", message: "Phòng đã bắt đầu hoặc đã kết thúc." });
   if (room.players.size >= 14) return send(client.ws, { type: "error", message: "Phòng đã đủ 14 người." });
@@ -181,7 +195,7 @@ function startMatch(room) {
   };
   spawnPlayers(room);
   room.lastTick = Date.now();
-  for (const p of room.players.values()) send(p.ws, { type: "matchStarted", field: FIELD, duration: MATCH_SECONDS });
+  for (const p of room.players.values()) send(p.ws, { type: "matchStarted", field: FIELD, duration: MATCH_SECONDS, practice: Boolean(room.practice) });
   room.loop = setInterval(() => tick(room), 1000 / TICK_RATE);
   broadcastRoom(room);
 }
@@ -194,6 +208,12 @@ function resetAfterGoal(room) {
 function handleGoal(room, goalTeam) {
   const state = room.state;
   if (!state || room.isGoalPausing) return;
+  if (room.practice) {
+    const b = state.ball;
+    b.x = FIELD.width / 2; b.y = FIELD.height / 2;
+    b.vx = b.vy = 0; b.ownerId = null; b.lastTouchId = null;
+    return;
+  }
 
   state.score[goalTeam]++;
 
@@ -267,7 +287,7 @@ function tick(room) {
   }
 
   room.lastTick = now;
-  state.remaining = Math.max(0, MATCH_SECONDS - (now - room.startedAt) / 1000);
+  if (!room.practice) state.remaining = Math.max(0, MATCH_SECONDS - (now - room.startedAt) / 1000);
   const players = [...room.players.values()];
   const ball = state.ball;
 
@@ -404,7 +424,7 @@ function tick(room) {
     }
   }
 
-  if (state.remaining <= 0) {
+  if (!room.practice && state.remaining <= 0) {
     room.status = "finished";
     clearInterval(room.loop); room.loop = null;
     stopCountdown(room);
@@ -435,6 +455,9 @@ wss.on("connection", ws => {
     if (msg.type === "createRoom") {
       if (client.roomId) leaveRoom(client, false);
       createRoom(client); broadcastRooms();
+    }
+    if (msg.type === "startPractice") {
+      createPracticeRoom(client);
     }
     if (msg.type === "joinRoom") {
       const room = rooms.get(String(msg.roomId || "").toUpperCase());
