@@ -3,7 +3,7 @@
   const screens = ["menuScreen", "lobbyScreen", "gameScreen", "resultScreen"];
   const state = {
     ws: null, connected: false, id: null, name: "", room: null, rooms: [],
-    ready: false, isHost: false, training: false, practice: null,
+    ready: false, isHost: false, training: false, practice: null, lastFrameAt: 0,
     field: { width: 1200, height: 700, goalHeight: 190, margin: 34 },
     snapshot: null, countdown: null, kickHeld: false, kickStart: 0, kickChargeFrame: 0,
     input: { x: 0, y: 0, sprint: false, kick: false, kickPower: 0, control: false, tackle: false },
@@ -104,6 +104,7 @@
         { const me = (msg.players || []).find(p => p.id === state.id); if (me && me.facing && Math.hypot(me.facing.x, me.facing.y) > 0.1) state.facing = { x: me.facing.x, y: me.facing.y }; }
         updateHud(msg); break;
       case "gameOver":
+        if (state.training) break;
         $("finalRed").textContent = msg.score.red;
         $("finalBlue").textContent = msg.score.blue;
         renderStats(msg.stats || []);
@@ -158,14 +159,6 @@
   }
   function updateHud(s) {
     $("redScore").textContent = s.score.red; $("blueScore").textContent = s.score.blue;
-    if (state.training) {
-      $("redTeamLabel").textContent = "BẠN";
-      $("blueTeamLabel").textContent = "MỤC TIÊU";
-      $("matchClock").textContent = "LUYỆN TẬP";
-      return;
-    }
-    $("redTeamLabel").textContent = "ĐỎ";
-    $("blueTeamLabel").textContent = "XANH";
     const sec = Math.ceil(s.remaining); $("matchClock").textContent = `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
   }
   function renderStats(stats) {
@@ -178,6 +171,7 @@
     });
   }
 
+  // Entry notice. Closing it leaves the original menu and match interface untouched.
   $("orientationCloseBtn").addEventListener("click", () => {
     $("orientationModal").classList.add("hidden");
   });
@@ -187,7 +181,7 @@
     state.input.kick = false; state.input.kickPower = 0; state.input.control = false; state.input.tackle = false;
     state.kickHeld = false;
     cancelAnimationFrame(state.kickChargeFrame);
-    if (knob) knob.style.transform = "translate(-50%,-50%)";
+    const fill = $("kickChargeFill"); if (fill) fill.style.width = "0%";
     if (typeof resetJoystick === "function") resetJoystick();
     document.querySelectorAll(".control-btn.pressed").forEach(el => el.classList.remove("pressed"));
   }
@@ -195,70 +189,52 @@
   function startPractice() {
     resetGameInput();
     state.training = true;
-    state.room = null;
-    state.roomId = null;
+    state.room = null; state.roomId = null;
     state.field = { width: 2400, height: 1400, goalHeight: 190, margin: 50 };
     state.facing = { x: 1, y: 0 };
     state.tackleReadyAt = 0;
-    const px = state.field.width * 0.25, py = state.field.height * 0.5;
     const player = {
-      id: "practice-player", name: ($("playerName").value.trim() || state.name || "Bạn").slice(0, 18),
-      team: "red", x: px, y: py, vx: 0, vy: 0, stamina: 100,
+      id: "practice-player",
+      name: ($("playerName").value.trim() || state.name || "Bạn").slice(0, 18),
+      team: "red", x: 600, y: 700, vx: 0, vy: 0, stamina: 100,
       facing: { x: 1, y: 0 }, tackling: false, tackleCooldown: 0, radius: 17
     };
+    const ball = { x: player.x + 30, y: player.y, vx: 0, vy: 0, r: 10, ownerId: player.id };
     state.practice = {
-      player, ball: { x: px + 52, y: py, vx: 0, vy: 0, r: 10, ownerId: null },
-      score: { red: 0, blue: 0 }, lastHudAt: 0, tackleUntil: 0, tackleCooldownUntil: 0
+      player, ball, score: { red: 0, blue: 0 }, lastHudAt: 0,
+      tackleUntil: 0
     };
-    state.snapshot = {
-      type: "snapshot", remaining: 300, score: state.practice.score,
-      ball: state.practice.ball, players: [player]
-    };
+    state.snapshot = { type: "snapshot", remaining: 300, score: state.practice.score, ball, players: [player] };
     $("countdownOverlay").classList.add("hidden");
     $("exitPracticeBtn").classList.remove("hidden");
-    $("redTeamLabel").textContent = "BẠN";
-    $("blueTeamLabel").textContent = "MỤC TIÊU";
-    updateHud(state.snapshot);
     showScreen("gameScreen");
-    toast("Chế độ luyện tập: di chuyển, giữ bóng và sút vào khung thành bên phải.");
+    toast("Luyện tập: di chuyển, giữ bóng và sút về khung thành bên phải.");
   }
 
   function exitPractice() {
-    state.training = false;
-    state.practice = null;
-    state.snapshot = null;
+    state.training = false; state.practice = null; state.snapshot = null;
     resetGameInput();
     $("exitPracticeBtn").classList.add("hidden");
-    $("redTeamLabel").textContent = "ĐỎ";
-    $("blueTeamLabel").textContent = "XANH";
     $("matchClock").textContent = "05:00";
+    $("redScore").textContent = "0"; $("blueScore").textContent = "0";
     showScreen("menuScreen");
   }
 
   function practiceKick(power) {
-    const practice = state.practice;
-    if (!state.training || !practice) return;
-    const p = practice.player, b = practice.ball;
-    const distance = Math.hypot(b.x - p.x, b.y - p.y);
-    if (b.ownerId !== p.id && distance <= p.radius + (b.r || 10) + 5 && Math.hypot(b.vx, b.vy) < 230) {
-      b.ownerId = p.id; b.vx = b.vy = 0;
+    const game = state.practice;
+    if (!game) return;
+    const p = game.player, b = game.ball;
+    if (b.ownerId !== p.id && Math.hypot(b.x - p.x, b.y - p.y) > p.radius + b.r + 8) {
+      toast("Hãy tiến sát bóng trước khi sút."); return;
     }
-    if (b.ownerId !== p.id) {
-      toast("Hãy tiến sát bóng để khống chế trước khi sút.");
-      return;
-    }
-    const facing = state.facing;
-    const mag = Math.hypot(facing.x, facing.y) || 1;
+    const f = state.facing, mag = Math.hypot(f.x, f.y) || 1;
     b.ownerId = null;
-    b.vx = facing.x / mag * (330 + Math.max(.15, Math.min(1, power)) * 420);
-    b.vy = facing.y / mag * (330 + Math.max(.15, Math.min(1, power)) * 420);
+    b.vx = f.x / mag * (330 + Math.max(.15, Math.min(1, power)) * 420);
+    b.vy = f.y / mag * (330 + Math.max(.15, Math.min(1, power)) * 420);
   }
 
   function dispatchKick(power) {
-    if (state.training) {
-      practiceKick(power);
-      return;
-    }
+    if (state.training) { practiceKick(power); return; }
     send("input", { input: { ...state.input, facing: { ...state.facing }, x: state.facing.x, y: state.facing.y, kick: true, kickPower: power } });
   }
 
@@ -308,17 +284,15 @@
     if (now < state.tackleReadyAt) { toast(`Xoạc bóng hồi chiêu ${Math.ceil((state.tackleReadyAt-now)/1000)}s`); return; }
     state.tackleReadyAt = now + 2000; state.input.tackle = true;
     if (state.training && state.practice) {
-      state.practice.tackleUntil = now + 260;
-      state.practice.tackleCooldownUntil = now + 2000;
-      state.practice.player.tackling = true;
-      const b = state.practice.ball;
-      if (Math.hypot(b.x - state.practice.player.x, b.y - state.practice.player.y) < 72) {
-        b.ownerId = state.practice.player.id; b.vx = b.vy = 0;
+      const game = state.practice, p = game.player, b = game.ball;
+      game.tackleUntil = now + 260;
+      if (Math.hypot(b.x - p.x, b.y - p.y) <= 75) {
+        b.ownerId = p.id; b.vx = 0; b.vy = 0;
       }
     } else {
       send("input", { input: { ...state.input, tackle: true, facing: { ...state.facing } } });
     }
-    setTimeout(() => { state.input.tackle = false; if (state.practice) state.practice.player.tackling = false; }, 120);
+    setTimeout(() => { state.input.tackle = false; }, 120);
   }, () => {});
   function updateKickCharge() {
     const fill = $("kickChargeFill");
@@ -377,75 +351,50 @@
     }
   }, 1000 / 30);
 
-  const canvas = $("gameCanvas"), ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
-  const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d", { alpha: false, desynchronized: true }) : null;
-  const pitchCache = document.createElement("canvas");
-  const pitchCtx = pitchCache.getContext("2d", { alpha: false });
-  let pitchCacheKey = "", lastMinimapDraw = 0, lastFrameTime = 0, canvasSizeKey = "";
-
-  function resizeCanvasForDevice() {
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) return;
-    // Cap the backing buffer at 1280×720 and DPR 1.25 to reduce GPU fill cost on phones.
-    const dpr = Math.min(1.25, window.devicePixelRatio || 1);
-    const scale = Math.min(dpr, 1280 / rect.width, 720 / rect.height);
-    const width = Math.max(1, Math.round(rect.width * scale));
-    const height = Math.max(1, Math.round(rect.height * scale));
-    const key = `${width}x${height}`;
-    if (canvasSizeKey === key) return;
-    canvasSizeKey = key;
-    canvas.width = width;
-    canvas.height = height;
-  }
-
-  function ensurePitchCache(fw, fh) {
-    const key = `${fw}x${fh}`;
-    if (pitchCacheKey === key) return;
-    pitchCacheKey = key;
-    pitchCache.width = fw; pitchCache.height = fh;
-    pitchCtx.fillStyle = "#0a493b"; pitchCtx.fillRect(0, 0, fw, fh);
-    const stripe = 150;
-    pitchCtx.fillStyle = "#ffffff08";
-    for (let x = 0; x < fw; x += stripe * 2) pitchCtx.fillRect(x, 0, stripe, fh);
-    pitchCtx.strokeStyle = "#d4f7e5a8"; pitchCtx.lineWidth = 3;
-    pitchCtx.strokeRect(34, 34, fw - 68, fh - 68);
-    pitchCtx.beginPath(); pitchCtx.moveTo(fw / 2, 34); pitchCtx.lineTo(fw / 2, fh - 34); pitchCtx.stroke();
-    pitchCtx.beginPath(); pitchCtx.arc(fw / 2, fh / 2, 92, 0, Math.PI * 2); pitchCtx.stroke();
-    pitchCtx.beginPath(); pitchCtx.arc(fw / 2, fh / 2, 4, 0, Math.PI * 2); pitchCtx.fillStyle = "#d4f7e5"; pitchCtx.fill();
+  const canvas = $("gameCanvas"), ctx = canvas.getContext("2d");
+  const minimap = $("minimapCanvas"), mctx = minimap ? minimap.getContext("2d") : null;
+  function drawField() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a493b"; ctx.fillRect(0, 0, w, h);
+    const stripe = 75;
+    for (let x = 0; x < w; x += stripe * 2) { ctx.fillStyle = "#ffffff08"; ctx.fillRect(x, 0, stripe, h); }
+    ctx.strokeStyle = "#d4f7e5a8"; ctx.lineWidth = 3;
+    ctx.strokeRect(34, 34, w - 68, h - 68);
+    ctx.beginPath(); ctx.moveTo(w / 2, 34); ctx.lineTo(w / 2, h - 34); ctx.stroke();
+    ctx.beginPath(); ctx.arc(w / 2, h / 2, 92, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(w / 2, h / 2, 4, 0, Math.PI * 2); ctx.fillStyle = "#d4f7e5"; ctx.fill();
     const gh = 190, boxW = 135, boxH = 320;
-    pitchCtx.strokeRect(34, fh / 2 - boxH / 2, boxW, boxH);
-    pitchCtx.strokeRect(fw - 34 - boxW, fh / 2 - boxH / 2, boxW, boxH);
-    pitchCtx.strokeRect(34, fh / 2 - gh / 2, 22, gh);
-    pitchCtx.strokeRect(fw - 56, fh / 2 - gh / 2, 22, gh);
-    pitchCtx.fillStyle = "#d4f7e522";
-    pitchCtx.fillRect(0, fh / 2 - gh / 2, 18, gh);
-    pitchCtx.fillRect(fw - 18, fh / 2 - gh / 2, 18, gh);
+    ctx.strokeRect(34, h / 2 - boxH / 2, boxW, boxH);
+    ctx.strokeRect(w - 34 - boxW, h / 2 - boxH / 2, boxW, boxH);
+    ctx.strokeRect(34, h / 2 - gh / 2, 22, gh);
+    ctx.strokeRect(w - 56, h / 2 - gh / 2, 22, gh);
+    ctx.fillStyle = "#d4f7e522";
+    ctx.fillRect(0, h / 2 - gh / 2, 18, gh);
+    ctx.fillRect(w - 18, h / 2 - gh / 2, 18, gh);
   }
-
-  function drawMinimap(s, now) {
-    if (!mctx || !s || now - lastMinimapDraw < 100) return;
-    lastMinimapDraw = now;
+  function drawMinimap(s) {
+    if (!mctx || !s) return;
     const w = minimap.width, h = minimap.height, fw = state.field.width || 1200, fh = state.field.height || 700;
     mctx.clearRect(0, 0, w, h);
     mctx.fillStyle = "rgba(255,255,255,.72)"; mctx.fillRect(0, 0, w, h);
-    mctx.strokeStyle = "rgba(12,65,53,.65)"; mctx.lineWidth = 1; mctx.strokeRect(2, 2, w - 4, h - 4);
-    mctx.beginPath(); mctx.moveTo(w / 2, 2); mctx.lineTo(w / 2, h - 2); mctx.stroke();
+    mctx.strokeStyle = "rgba(12,65,53,.65)"; mctx.lineWidth = 1; mctx.strokeRect(2,2,w-4,h-4);
+    mctx.beginPath(); mctx.moveTo(w/2,2); mctx.lineTo(w/2,h-2); mctx.stroke();
     const localId = state.training ? "practice-player" : state.id;
     for (const p of (s.players || [])) {
       mctx.fillStyle = p.team === "red" ? "#ff4059" : "#2878ef";
-      mctx.beginPath(); mctx.arc(p.x / fw * w, p.y / fh * h, p.id === localId ? 3.5 : 2.7, 0, Math.PI * 2); mctx.fill();
+      mctx.beginPath(); mctx.arc(p.x/fw*w, p.y/fh*h, p.id === localId ? 3.5 : 2.7, 0, Math.PI*2); mctx.fill();
     }
-    if (s.ball) { mctx.fillStyle = "#111"; mctx.beginPath(); mctx.arc(s.ball.x / fw * w, s.ball.y / fh * h, 2, 0, Math.PI * 2); mctx.fill(); }
+    if (s.ball) { mctx.fillStyle="#111"; mctx.beginPath(); mctx.arc(s.ball.x/fw*w,s.ball.y/fh*h,2,0,Math.PI*2); mctx.fill(); }
   }
-
   function stepPractice(dt, now) {
     const game = state.practice;
     if (!game) return;
     const p = game.player, b = game.ball, f = state.field;
     let ix = Number(state.input.x) || 0, iy = Number(state.input.y) || 0;
-    const mag = Math.hypot(ix, iy);
-    if (mag > 1) { ix /= mag; iy /= mag; }
-    if (mag > .18) {
+    const magnitude = Math.hypot(ix, iy);
+    if (magnitude > 1) { ix /= magnitude; iy /= magnitude; }
+    if (Math.hypot(ix, iy) > .18) {
       const n = Math.hypot(ix, iy) || 1;
       state.facing.x = ix / n; state.facing.y = iy / n;
     }
@@ -462,9 +411,8 @@
     p.y = Math.max(f.margin + p.radius, Math.min(f.height - f.margin - p.radius, p.y + p.vy * dt));
 
     if (b.ownerId === p.id) {
-      const dirX = p.facing.x, dirY = p.facing.y;
-      b.x = p.x + dirX * (p.radius + (b.r || 10) + 3);
-      b.y = p.y + dirY * (p.radius + (b.r || 10) + 3);
+      b.x = p.x + p.facing.x * (p.radius + b.r + 3);
+      b.y = p.y + p.facing.y * (p.radius + b.r + 3);
       b.vx = p.vx * .45; b.vy = p.vy * .45;
     } else {
       b.x += b.vx * dt; b.y += b.vy * dt;
@@ -472,28 +420,21 @@
       b.vx *= friction; b.vy *= friction;
       if (Math.hypot(b.vx, b.vy) < 8) b.vx = b.vy = 0;
       const inGoal = Math.abs(b.y - f.height / 2) < f.goalHeight / 2;
-      if (b.x >= f.width - f.margin - (b.r || 10) && inGoal && b.vx > 0) {
+      if (b.x >= f.width - f.margin - b.r && inGoal && b.vx > 0) {
         game.score.red++;
         p.x = f.width * .25; p.y = f.height * .5; p.vx = p.vy = 0;
-        b.x = p.x + 52; b.y = p.y; b.vx = b.vy = 0; b.ownerId = null;
-        toast("VÀO LƯỚI! Bạn đã ghi bàn trong chế độ luyện tập.");
-      } else if (b.x <= f.margin + (b.r || 10) && inGoal && b.vx < 0) {
-        b.x = f.width * .25 + 52; b.y = f.height * .5; b.vx = b.vy = 0; b.ownerId = null;
+        b.x = p.x + p.radius + b.r + 3; b.y = p.y; b.vx = b.vy = 0; b.ownerId = p.id;
+        toast("Vào lưới! Bạn vừa ghi bàn trong chế độ luyện tập.");
+      } else if (b.x <= f.margin + b.r && inGoal && b.vx < 0) {
+        b.x = p.x + p.radius + b.r + 3; b.y = p.y; b.vx = b.vy = 0; b.ownerId = p.id;
       } else {
-        if (b.x < f.margin + (b.r || 10) || b.x > f.width - f.margin - (b.r || 10)) b.vx *= -.82;
-        if (b.y < f.margin + (b.r || 10) || b.y > f.height - f.margin - (b.r || 10)) b.vy *= -.82;
-        b.x = Math.max(f.margin + (b.r || 10), Math.min(f.width - f.margin - (b.r || 10), b.x));
-        b.y = Math.max(f.margin + (b.r || 10), Math.min(f.height - f.margin - (b.r || 10), b.y));
+        if (b.x < f.margin + b.r || b.x > f.width - f.margin - b.r) b.vx *= -.82;
+        if (b.y < f.margin + b.r || b.y > f.height - f.margin - b.r) b.vy *= -.82;
+        b.x = Math.max(f.margin + b.r, Math.min(f.width - f.margin - b.r, b.x));
+        b.y = Math.max(f.margin + b.r, Math.min(f.height - f.margin - b.r, b.y));
       }
-      const d = Math.hypot(b.x - p.x, b.y - p.y);
-      if (d <= p.radius + (b.r || 10) + 2) {
-        if (Math.hypot(b.vx, b.vy) < 230 || state.input.control) {
-          b.ownerId = p.id; b.vx = b.vy = 0;
-        } else {
-          const norm = d || 1;
-          b.vx = Math.abs(b.vx) * (b.x - p.x) / norm + p.vx * .25;
-          b.vy = Math.abs(b.vy) * (b.y - p.y) / norm + p.vy * .25;
-        }
+      if (Math.hypot(b.x - p.x, b.y - p.y) <= p.radius + b.r + 2 && (Math.hypot(b.vx, b.vy) < 230 || state.input.control)) {
+        b.ownerId = p.id; b.vx = b.vy = 0;
       }
     }
     state.snapshot = { type: "snapshot", remaining: 300, score: game.score, ball: b, players: [p] };
@@ -503,61 +444,72 @@
     }
   }
 
-  function draw(frameTime) {
-    requestAnimationFrame(draw);
-    if ($("gameScreen").classList.contains("hidden")) { lastFrameTime = frameTime; return; }
-    resizeCanvasForDevice();
-    const now = performance.now();
-    const dt = lastFrameTime ? Math.max(0, Math.min(.05, (frameTime - lastFrameTime) / 1000)) : 1 / 60;
-    lastFrameTime = frameTime;
-    if (state.training) stepPractice(dt, now);
+  function draw() {
+    const frameNow = performance.now();
+    const dt = state.lastFrameAt ? Math.min(.05, (frameNow - state.lastFrameAt) / 1000) : 1 / 60;
+    state.lastFrameAt = frameNow;
+    if (state.training) stepPractice(dt, frameNow);
+    // Skip the hidden canvas while in menus; resume the exact original renderer in-game.
+    if ($( "gameScreen" ).classList.contains("hidden")) { requestAnimationFrame(draw); return; }
     const s = state.snapshot;
     const vw = canvas.width, vh = canvas.height;
+    ctx.clearRect(0, 0, vw, vh);
+    // Camera follows this client only. Keep a moderate zoom and clamp at field edges.
     const fw = state.field.width || 1200, fh = state.field.height || 700;
-    ensurePitchCache(fw, fh);
-    ctx.fillStyle = "#0a493b"; ctx.fillRect(0, 0, vw, vh);
-    // The pitch is drawn once into a cache. Each frame only blits the cached field and moving entities.
     const localId = state.training ? "practice-player" : state.id;
     const me = s && s.players ? s.players.find(p => p.id === localId) : null;
     const zoom = Math.min(1.18, vw / 920, vh / 520);
     const worldViewW = vw / zoom, worldViewH = vh / zoom;
-    let camX = me ? me.x : fw / 2, camY = me ? me.y : fh / 2;
-    camX = worldViewW >= fw ? fw / 2 : Math.max(worldViewW / 2, Math.min(fw - worldViewW / 2, camX));
-    camY = worldViewH >= fh ? fh / 2 : Math.max(worldViewH / 2, Math.min(fh - worldViewH / 2, camY));
+    let camX = me ? me.x : fw/2, camY = me ? me.y : fh/2;
+    camX = Math.max(worldViewW/2, Math.min(fw-worldViewW/2, camX));
+    camY = Math.max(worldViewH/2, Math.min(fh-worldViewH/2, camY));
     ctx.save();
-    ctx.translate(vw / 2, vh / 2); ctx.scale(zoom, zoom); ctx.translate(-camX, -camY);
-    ctx.drawImage(pitchCache, 0, 0);
+    ctx.translate(vw/2, vh/2); ctx.scale(zoom, zoom); ctx.translate(-camX, -camY);
+    // Draw pitch in server world coordinates, not viewport coordinates.
+    ctx.fillStyle = "#0a493b"; ctx.fillRect(0, 0, fw, fh);
+    const stripe = 75;
+    for (let x = 0; x < fw; x += stripe * 2) { ctx.fillStyle = "#ffffff08"; ctx.fillRect(x, 0, stripe, fh); }
+    ctx.strokeStyle = "#d4f7e5a8"; ctx.lineWidth = 3;
+    ctx.strokeRect(34, 34, fw-68, fh-68);
+    ctx.beginPath(); ctx.moveTo(fw/2, 34); ctx.lineTo(fw/2, fh-34); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fw/2, fh/2, 92, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(fw/2, fh/2, 4, 0, Math.PI*2); ctx.fillStyle="#d4f7e5"; ctx.fill();
+    const gh = 190, boxW = 135, boxH = 320;
+    ctx.strokeRect(34, fh/2-boxH/2, boxW, boxH);
+    ctx.strokeRect(fw-34-boxW, fh/2-boxH/2, boxW, boxH);
+    ctx.strokeRect(34, fh/2-gh/2, 22, gh);
+    ctx.strokeRect(fw-56, fh/2-gh/2, 22, gh);
+    ctx.fillStyle="#d4f7e522"; ctx.fillRect(0,fh/2-gh/2,18,gh); ctx.fillRect(fw-18,fh/2-gh/2,18,gh);
     if (s) {
-      for (const p of s.players || []) {
+      s.players.forEach(p => {
         const color = p.team === "red" ? "#ff4d62" : "#448cff";
-        // Flat, glow-free sprites avoid the expensive per-entity shadowBlur path on low-end phones.
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.arc(p.x, p.y, 17, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "#ffffffcc"; ctx.lineWidth = 2; ctx.stroke();
-        ctx.fillStyle = "#fff"; ctx.font = "bold 14px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(p.id === localId ? "★" : String(p.name || "?").slice(0, 1).toUpperCase(), p.x, p.y);
-        ctx.fillStyle = "#e8f4ff"; ctx.font = "12px system-ui"; ctx.textBaseline = "bottom"; ctx.fillText(p.name || "", p.x, p.y - 23);
-        ctx.fillStyle = "#07111c"; ctx.fillRect(p.x - 19, p.y + 22, 38, 4);
-        ctx.fillStyle = "#39e6d0"; ctx.fillRect(p.x - 19, p.y + 22, 38 * Math.max(0, p.stamina || 0) / 100, 4);
+        ctx.save(); ctx.shadowColor=color; ctx.shadowBlur=13; ctx.fillStyle=color;
+        ctx.beginPath(); ctx.arc(p.x,p.y,17,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0; ctx.strokeStyle="#ffffffcc"; ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle="#fff"; ctx.font="bold 14px Inter"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(p.id === localId ? "★" : p.name.slice(0,1).toUpperCase(),p.x,p.y);
+        ctx.fillStyle="#e8f4ff"; ctx.font="12px Inter"; ctx.textBaseline="bottom"; ctx.fillText(p.name,p.x,p.y-23);
+        ctx.fillStyle="#07111c"; ctx.fillRect(p.x-19,p.y+22,38,4);
+        ctx.fillStyle="#39e6d0"; ctx.fillRect(p.x-19,p.y+22,38*Math.max(0,p.stamina||0)/100,p.y ? 4 : 4);
+        // Facing arrow is shown only for the local player's own character.
         if (p.id === localId) {
           const fx = state.facing.x, fy = state.facing.y;
-          ctx.strokeStyle = "#ffffff"; ctx.fillStyle = "#ffffff"; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.moveTo(p.x + fx * 10, p.y + fy * 10); ctx.lineTo(p.x + fx * 34, p.y + fy * 34); ctx.stroke();
-          const a = Math.atan2(fy, fx), tipX = p.x + fx * 36, tipY = p.y + fy * 36;
-          ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(tipX - 10 * Math.cos(a - .48), tipY - 10 * Math.sin(a - .48)); ctx.lineTo(tipX - 10 * Math.cos(a + .48), tipY - 10 * Math.sin(a + .48)); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle="#ffffff"; ctx.fillStyle="#ffffff"; ctx.lineWidth=3;
+          ctx.beginPath(); ctx.moveTo(p.x+fx*10,p.y+fy*10); ctx.lineTo(p.x+fx*34,p.y+fy*34); ctx.stroke();
+          const a=Math.atan2(fy,fx), tipX=p.x+fx*36, tipY=p.y+fy*36;
+          ctx.beginPath(); ctx.moveTo(tipX,tipY); ctx.lineTo(tipX-10*Math.cos(a-.48),tipY-10*Math.sin(a-.48)); ctx.lineTo(tipX-10*Math.cos(a+.48),tipY-10*Math.sin(a+.48)); ctx.closePath(); ctx.fill();
         }
-      }
-      const b = s.ball;
-      if (b) {
-        ctx.fillStyle = "#f4f8ff"; ctx.beginPath(); ctx.arc(b.x, b.y, 10, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "#122433"; ctx.lineWidth = 2; ctx.stroke();
-        ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI * 2); ctx.fillStyle = "#122433"; ctx.fill();
-      }
-      const meNow = (s.players || []).find(p => p.id === localId);
-      if (!state.training && meNow && typeof meNow.tackleCooldown === "number" && meNow.tackleCooldown > 0) state.tackleReadyAt = performance.now() + meNow.tackleCooldown;
-      drawMinimap(s, now);
+        ctx.restore();
+      });
+      const b=s.ball; ctx.save(); ctx.shadowColor="#fff"; ctx.shadowBlur=14; ctx.fillStyle="#f4f8ff";
+      ctx.beginPath(); ctx.arc(b.x,b.y,10,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; ctx.strokeStyle="#122433"; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x,b.y,3,0,Math.PI*2); ctx.fillStyle="#122433"; ctx.fill(); ctx.restore();
+      const meNow = s.players.find(p => p.id === localId);
+      if (meNow && typeof meNow.tackleCooldown === "number" && meNow.tackleCooldown > 0) state.tackleReadyAt = performance.now() + meNow.tackleCooldown;
+      drawMinimap(s);
     }
     ctx.restore();
+    requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
   connect();

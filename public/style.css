@@ -485,24 +485,17 @@
 }
 
 
-/* Entry orientation notice */
+/* Add-on UI only: preserve all original match, camera and mobile-control styles. */
 .orientation-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(2,8,14,.88);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 .orientation-modal.hidden{display:none!important}
-.orientation-card{position:relative;width:min(520px,100%);padding:clamp(26px,6vw,42px);border:1px solid #31556b;border-radius:16px;background:linear-gradient(145deg,#10283a,#081725);box-shadow:0 22px 80px #0008;text-align:center}
-.orientation-icon{display:grid;place-items:center;width:62px;height:62px;margin:0 auto 20px;border:1px solid #39e6d066;border-radius:50%;color:var(--cyan);font-size:36px;font-weight:800}
-.orientation-card h2{margin:0;color:var(--text);font:800 clamp(22px,4.5vw,30px)/1.28 'Barlow Condensed',Inter,sans-serif;letter-spacing:.025em}
-.orientation-credit{margin:14px 0 24px;color:var(--cyan);font-size:13px;font-weight:700;letter-spacing:.06em}
+.orientation-card{width:min(520px,100%);padding:clamp(24px,5vw,40px);border:1px solid #31556b;border-radius:14px;background:linear-gradient(145deg,#10283a,#081725);box-shadow:0 22px 80px #0008;text-align:center}
+.orientation-icon{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 16px;border:1px solid #39e6d066;border-radius:50%;color:var(--cyan);font-size:34px;font-weight:800}
+.orientation-card h2{margin:0;color:var(--text);font:800 clamp(22px,4.5vw,30px)/1.28 'Barlow Condensed',Inter,sans-serif;letter-spacing:.02em}
+.orientation-credit{margin:14px 0 22px;color:var(--cyan);font-size:13px;font-weight:700;letter-spacing:.04em}
 .orientation-close{width:100%;white-space:normal;min-height:48px}
 .btn-practice{width:100%;margin:0 0 10px;border-color:#397265;background:#103b37;color:#83f3df}
 .btn-practice:hover{background:#175147;border-color:var(--cyan)}
-.exit-practice{position:absolute;right:0;top:0;z-index:45;min-height:38px;padding:0 12px;background:rgba(7,17,28,.86);backdrop-filter:blur(5px);font-size:9px}
-#gameScreen{position:relative}
-/* Low-cost rendering: avoid animated visual effects during active play. */
-#gameScreen .field-wrap{contain:layout paint}
-.control-btn,.joystick,.joystick-knob{will-change:transform}
-@media(max-width:700px){
-  #gameScreen:not(.hidden) .exit-practice{position:fixed;left:max(10px,env(safe-area-inset-left));right:auto;top:max(10px,env(safe-area-inset-top));z-index:45;min-height:34px;padding:0 9px;font-size:8px}
-  .orientation-card{padding:28px 22px}
-  .orientation-icon{width:52px;height:52px;margin-bottom:14px}
-}
-@media(prefers-reduced-motion:reduce){.screen{animation:none}.btn{transition:none}}
+.exit-practice{position:absolute;left:12px;top:76px;z-index:45;min-height:36px;padding:0 11px;background:rgba(7,17,28,.88);font-size:9px}
+@media(max-width:700px){.exit-practice{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));right:auto;bottom:auto;z-index:10001;min-height:32px;padding:0 8px;font-size:8px}.orientation-card{padding:26px 20px}.orientation-icon{width:48px;height:48px;margin-bottom:13px}}
+
+@media(max-width:950px) and (orientation:landscape){.exit-practice{position:fixed;left:10px;top:105px;right:auto;bottom:auto;z-index:10001}}
