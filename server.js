@@ -7,8 +7,6 @@ const path = require("path");
 const PORT = Number(process.env.PORT || 3000);
 const TICK_RATE = 60;
 const DT = 1 / TICK_RATE;
-const SNAPSHOT_RATE = 30;
-const SNAPSHOT_INTERVAL_MS = 1000 / SNAPSHOT_RATE;
 const FIELD = { width: 2400, height: 1400, goalHeight: 190, margin: 50 };
 const MATCH_SECONDS = 5 * 60;
 const app = express();
@@ -67,9 +65,7 @@ function createRoom(host) {
   const room = {
     id, hostId: host.id, players: new Map(), status: "waiting",
     nextTeam: "red", countdownEnds: 0, countdownTimer: null,
-    goalCountdownTimer: null, isGoalPausing: false,
-    state: null, loop: null, lastTick: Date.now(), startedAt: 0,
-    lastSnapshotAt: 0
+    state: null, loop: null, lastTick: Date.now(), startedAt: 0
   };
   rooms.set(id, room);
   joinRoom(host, room, true);
@@ -95,12 +91,9 @@ function joinRoom(client, room, isHost = false) {
   broadcastRooms();
 }
 function stopCountdown(room) {
-  if (room.countdownTimer) clearInterval(room.countdownTimer);
+  if (room.countdownTimer) clearTimeout(room.countdownTimer);
   room.countdownTimer = null;
   room.countdownEnds = 0;
-  if (room.goalCountdownTimer) clearInterval(room.goalCountdownTimer);
-  room.goalCountdownTimer = null;
-  room.isGoalPausing = false;
 }
 function leaveRoom(client, disconnecting = true) {
   const room = rooms.get(client.roomId);
@@ -142,11 +135,11 @@ function requestStart(room, requesterId) {
   room.countdownEnds = Date.now() + 3000;
   broadcastRoom(room);
   let n = 3;
-  for (const p of room.players.values()) send(p.ws, { type: "countdown", value: n, text: "TRẬN ĐẤU BẮT ĐẦU" });
+  for (const p of room.players.values()) send(p.ws, { type: "countdown", value: n });
   room.countdownTimer = setInterval(() => {
     n--;
     if (n > 0) {
-      for (const p of room.players.values()) send(p.ws, { type: "countdown", value: n, text: "TRẬN ĐẤU BẮT ĐẦU" });
+      for (const p of room.players.values()) send(p.ws, { type: "countdown", value: n });
     } else {
       clearInterval(room.countdownTimer);
       room.countdownTimer = null;
@@ -173,9 +166,8 @@ function spawnPlayers(room) {
 function startMatch(room) {
   room.status = "playing";
   room.startedAt = Date.now();
-  room.isGoalPausing = false;
   room.state = {
-    ball: { x: FIELD.width / 2, y: FIELD.height / 2, vx: 0, vy: 0, r: 10, ownerId: null, lastTouchId: null },
+    ball: { x: FIELD.width / 2, y: FIELD.height / 2, vx: 0, vy: 0, r: 10, ownerId: null },
     score: { red: 0, blue: 0 }, remaining: MATCH_SECONDS,
     players: []
   };
@@ -187,86 +179,13 @@ function startMatch(room) {
 }
 function resetAfterGoal(room) {
   const b = room.state.ball;
-  b.x = FIELD.width / 2; b.y = FIELD.height / 2; b.vx = b.vy = 0; b.ownerId = null; b.lastTouchId = null;
+  b.x = FIELD.width / 2; b.y = FIELD.height / 2; b.vx = b.vy = 0; b.ownerId = null;
   spawnPlayers(room);
 }
-
-function handleGoal(room, goalTeam) {
-  const state = room.state;
-  if (!state || room.isGoalPausing) return;
-
-  state.score[goalTeam]++;
-
-  let scorerName = "";
-  if (state.ball.lastTouchId) {
-    const p = room.players.get(state.ball.lastTouchId);
-    if (p && p.team === goalTeam) {
-      p.goals = (p.goals || 0) + 1;
-      scorerName = p.name;
-    }
-  }
-
-  const teamName = goalTeam === "red" ? "ĐỘI ĐỎ" : "ĐỘI XANH";
-  const goalMsg = scorerName
-    ? `⚽ VÀO OOO! ${scorerName} ghi bàn cho ${teamName}!`
-    : `⚽ VÀO OOO! Bàn thắng cho ${teamName}!`;
-
-  for (const p of room.players.values()) {
-    send(p.ws, { type: "notice", message: goalMsg });
-  }
-
-  resetAfterGoal(room);
-
-  room.isGoalPausing = true;
-  let count = 3;
-
-  for (const p of room.players.values()) {
-    send(p.ws, { type: "countdown", value: count, text: "VÀO! TIẾP TỤC SAU..." });
-  }
-
-  room.goalCountdownTimer = setInterval(() => {
-    count--;
-    if (count > 0) {
-      for (const p of room.players.values()) {
-        send(p.ws, { type: "countdown", value: count, text: "VÀO! TIẾP TỤC SAU..." });
-      }
-    } else {
-      clearInterval(room.goalCountdownTimer);
-      room.goalCountdownTimer = null;
-      room.isGoalPausing = false;
-      for (const p of room.players.values()) {
-        send(p.ws, { type: "matchResumed" });
-        send(p.ws, { type: "countdown", value: 0 });
-      }
-    }
-  }, 1000);
-}
-
 function tick(room) {
   if (room.status !== "playing" || !room.state) return;
   const now = Date.now();
   const state = room.state;
-
-  if (room.isGoalPausing) {
-    room.startedAt += (now - room.lastTick);
-    room.lastTick = now;
-    if (now - room.lastSnapshotAt >= SNAPSHOT_INTERVAL_MS) {
-      room.lastSnapshotAt = now;
-      const players = [...room.players.values()];
-      const snapshot = {
-        type: "snapshot", time: now, remaining: state.remaining, score: state.score,
-        ball: { x: state.ball.x, y: state.ball.y, vx: 0, vy: 0, ownerId: null },
-        players: players.map(p => ({
-          id: p.id, name: p.name, team: p.team, x: p.x, y: p.y, stamina: p.stamina,
-          ready: p.ready, facing: p.facing, tackling: false, tackleCooldown: 0
-        }))
-      };
-      for (const p of players) send(p.ws, snapshot);
-    }
-    return;
-  }
-
-  room.lastTick = now;
   state.remaining = Math.max(0, MATCH_SECONDS - (now - room.startedAt) / 1000);
   const players = [...room.players.values()];
   const ball = state.ball;
@@ -276,14 +195,14 @@ function tick(room) {
     let ix = input.x, iy = input.y;
     const mag = Math.hypot(ix, iy);
     if (mag > 1) { ix /= mag; iy /= mag; }
-
+    // Face direction follows the last meaningful movement input and persists when the stick is released.
     const suppliedFacing = input.facing || {};
     const fm = Math.hypot(Number(suppliedFacing.x) || 0, Number(suppliedFacing.y) || 0);
     if (mag > 0.18) p.facing = { x: ix / (mag || 1), y: iy / (mag || 1) };
     else if (fm > 0.1) p.facing = { x: Number(suppliedFacing.x) / fm, y: Number(suppliedFacing.y) / fm };
     const stunned = now < p.stunnedUntil;
     let speed = 185;
-
+    // 1.2x stamina drain; empty stamina always means normal movement speed.
     if (input.sprint && p.stamina > 0 && !stunned) {
       speed *= 1.7;
       p.stamina = Math.max(0, p.stamina - 40.8 * DT);
@@ -291,7 +210,7 @@ function tick(room) {
       p.stamina = Math.min(100, p.stamina + 18 * DT);
     }
     if (stunned) ix = iy = 0;
-
+    // A tackle is a short directional lunge. Cooldown is enforced by the server.
     if (now < p.tackleUntil && !stunned) {
       p.vx = p.facing.x * 430;
       p.vy = p.facing.y * 430;
@@ -301,27 +220,20 @@ function tick(room) {
     p.x = clamp(p.x + p.vx * DT, FIELD.margin + p.radius, FIELD.width - FIELD.margin - p.radius);
     p.y = clamp(p.y + p.vy * DT, FIELD.margin + p.radius, FIELD.height - FIELD.margin - p.radius);
 
-    // XỬ LÝ SÚT BÓNG (NẾU ĐẠT CỰC ĐẠI: VẬN TỐC TĂNG GẤP 1.5 LẦN)
     if (p.pendingKick && ball.ownerId === p.id) {
       const kick = p.pendingKick;
       p.pendingKick = null;
       const angle = Math.atan2(kick.y, kick.x);
       const power = clamp(kick.power || 0.65, 0.15, 1);
       ball.ownerId = null;
-      ball.lastTouchId = p.id;
-
-      // Khi ghì đè nút sút đạt cực đại (power >= 0.98), nhân thêm 1.5 lần
-      const isMaxPower = power >= 0.98;
-      const kickSpeed = (330 + power * 420) * (isMaxPower ? 1.5 : 1.0);
-
-      ball.vx = Math.cos(angle) * kickSpeed;
-      ball.vy = Math.sin(angle) * kickSpeed;
+      ball.vx = Math.cos(angle) * (330 + power * 420);
+      ball.vy = Math.sin(angle) * (330 + power * 420);
     } else if (p.pendingKick) {
       p.pendingKick = null;
     }
   }
 
-  // Va chạm cầu thủ
+  // Player-player collision resolution.
   for (let i = 0; i < players.length; i++) for (let j = i + 1; j < players.length; j++) {
     const a = players[i], b = players[j];
     const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.001;
@@ -333,7 +245,7 @@ function tick(room) {
     }
   }
 
-  // Xoạc bóng
+  // Tackle wins possession only by making contact with the ball itself.
   for (const p of players) {
     if (now >= p.tackleUntil) continue;
     const dx = ball.x - p.x, dy = ball.y - p.y;
@@ -341,7 +253,6 @@ function tick(room) {
     const dot = (dx / dist) * p.facing.x + (dy / dist) * p.facing.y;
     if (dist <= p.radius + ball.r + 25 && dot > 0.15) {
       ball.ownerId = p.id;
-      ball.lastTouchId = p.id;
       ball.vx = ball.vy = 0;
       p.tackleUntil = 0;
       break;
@@ -362,18 +273,11 @@ function tick(room) {
     ball.vx *= friction; ball.vy *= friction;
     if (Math.hypot(ball.vx, ball.vy) < 8) ball.vx = ball.vy = 0;
 
+    // Goal openings are centered vertically.
     const inGoal = Math.abs(ball.y - FIELD.height / 2) < FIELD.goalHeight / 2;
-    let goalTeam = null;
-    if (ball.x <= FIELD.margin + ball.r && inGoal && ball.vx < 0) {
-      goalTeam = "blue";
-    } else if (ball.x >= FIELD.width - FIELD.margin - ball.r && inGoal && ball.vx > 0) {
-      goalTeam = "red";
-    }
-
-    if (goalTeam) {
-      handleGoal(room, goalTeam);
-      return;
-    } else {
+    if (ball.x <= FIELD.margin + ball.r && inGoal && ball.vx < 0) { state.score.blue++; resetAfterGoal(room); }
+    else if (ball.x >= FIELD.width - FIELD.margin - ball.r && inGoal && ball.vx > 0) { state.score.red++; resetAfterGoal(room); }
+    else {
       if (ball.x < FIELD.margin + ball.r || ball.x > FIELD.width - FIELD.margin - ball.r) ball.vx *= -0.82;
       if (ball.y < FIELD.margin + ball.r || ball.y > FIELD.height - FIELD.margin - ball.r) ball.vy *= -0.82;
       ball.x = clamp(ball.x, FIELD.margin + ball.r, FIELD.width - FIELD.margin - ball.r);
@@ -385,19 +289,14 @@ function tick(room) {
       if (d <= p.radius + ball.r + 2) {
         if (Math.hypot(ball.vx, ball.vy) < 230) {
           ball.ownerId = p.id;
-          ball.lastTouchId = p.id;
           ball.vx = ball.vy = 0;
         } else if (p.input.control) {
           ball.vx *= 0.2; ball.vy *= 0.2;
-          if (Math.hypot(ball.vx, ball.vy) < 100) {
-            ball.ownerId = p.id;
-            ball.lastTouchId = p.id;
-          }
+          if (Math.hypot(ball.vx, ball.vy) < 100) ball.ownerId = p.id;
         } else {
           const dx = ball.x - p.x, dy = ball.y - p.y, mag = Math.hypot(dx, dy) || 1;
           ball.vx = Math.abs(ball.vx) * dx / mag + p.vx * 0.25;
           ball.vy = Math.abs(ball.vy) * dy / mag + p.vy * 0.25;
-          ball.lastTouchId = p.id;
           p.stunnedUntil = now + 180;
         }
       }
@@ -407,7 +306,6 @@ function tick(room) {
   if (state.remaining <= 0) {
     room.status = "finished";
     clearInterval(room.loop); room.loop = null;
-    stopCountdown(room);
     for (const p of players) send(p.ws, { type: "gameOver", score: state.score, stats: players.map(q => ({ id: q.id, name: q.name, team: q.team, goals: q.goals, saves: q.saves })) });
     broadcastRoom(room); broadcastRooms(); return;
   }
@@ -485,7 +383,6 @@ wss.on("connection", ws => {
     if (msg.type === "playAgain") {
       const room = rooms.get(client.roomId);
       if (!room || room.status !== "finished") return;
-      stopCountdown(room);
       room.status = "waiting"; room.state = null;
       for (const p of room.players.values()) { p.ready = false; p.input = { x:0,y:0,sprint:false,kick:false,kickPower:0,control:false,tackle:false,facing:p.facing }; p._tackleInputHeld = false; p.tackleUntil = 0; p.tackleCooldownUntil = 0; }
       broadcastRoom(room);
